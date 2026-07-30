@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smarter Testing — Pipelines Page Mockup</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-app:      #0d1117;
+  --bg-sidebar:  #161b22;
+  --bg-panel:    #1c2129;
+  --bg-row:      #161b22;
+  --bg-row-hover:#1c2430;
+  --bg-card:     #21262d;
+  --bg-tooltip:  #2d333b;
+  --bg-slide:    #1c2129;
+  --border:      #30363d;
+  --border-light:#383f47;
+  --text-primary:#e6edf3;
+  --text-secondary:#8b949e;
+  --text-muted:  #6e7681;
+  --accent-blue: #58a6ff;
+  --accent-green:#3fb950;
+  --accent-amber:#d29922;
+  --accent-red:  #f85149;
+  --accent-purple:#bc8cff;
+  --badge-amber-bg: rgba(210,153,34,.15);
+  --badge-amber-border: rgba(210,153,34,.4);
+  --badge-green-bg: rgba(63,185,80,.13);
+  --badge-green-border: rgba(63,185,80,.4);
+  --badge-blue-bg: rgba(88,166,255,.12);
+  --badge-blue-border: rgba(88,166,255,.35);
+  --slide-width: 400px;
+  --font-mono: 'SF Mono', 'Fira Code', monospace;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.app-shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 60px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 16px; gap: 8px; flex-shrink: 0;
+}
+.sidebar-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); cursor: pointer; font-size: 16px;
+  transition: background .15s, color .15s;
+}
+.sidebar-icon:hover { background: var(--bg-panel); color: var(--text-primary); }
+.sidebar-icon.active { background: var(--accent-blue); color: #fff; }
+
+.main {
+  flex: 1; display: flex; flex-direction: column;
+  min-width: 0; position: relative; transition: margin-right .25s ease;
+}
+
+.topbar {
+  height: 52px; background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0;
+}
+.topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.topbar-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
+.topbar-search {
+  flex: 1; max-width: 400px; height: 32px;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px;
+  display: flex; align-items: center; padding: 0 10px; gap: 6px;
+  color: var(--text-muted); font-size: 12px; margin: 0 auto;
+}
+.topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+.content { padding: 20px 24px; flex: 1; overflow-x: auto; }
+
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.page-title { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.toggle-group { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+.toggle { width: 38px; height: 20px; background: var(--accent-blue); border-radius: 10px; position: relative; cursor: pointer; }
+.toggle::after { content:''; position: absolute; right: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+
+.filter-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-chip {
+  height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: 20px;
+  background: var(--bg-panel); color: var(--text-secondary); font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+}
+.filter-chip.active { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--badge-blue-bg); }
+.filter-chip .arrow { font-size: 9px; opacity: .6; }
+
+/* ── Table: 5 columns ── */
+.col-runs    { min-width: 0; }
+.col-trigger { width: 160px; flex-shrink: 0; }
+.col-time    { width: 120px; flex-shrink: 0; }
+.col-savings { width: 155px; flex-shrink: 0; }
+.col-actions { width: 90px; flex-shrink: 0; }
+
+.table-header {
+  display: flex;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted); font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; gap: 12px;
+}
+.table-header > * { flex-shrink: 0; }
+.table-header .col-runs { flex: 1; }
+
+.pipeline-row {
+  display: flex; gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start; cursor: pointer;
+  transition: background .12s; position: relative;
+}
+.pipeline-row:hover { background: var(--bg-row-hover); }
+.pipeline-row.active-panel { background: var(--bg-row-hover); }
+
+/* ── Run cell ── */
+.run-cell { display: flex; gap: 10px; align-items: flex-start; min-width: 0; flex: 1; }
+.status-dot {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 14px; margin-top: 1px;
+}
+.status-dot.success { background: rgba(63,185,80,.15); color: var(--accent-green); }
+.status-dot.running { background: rgba(88,166,255,.15); color: var(--accent-blue); }
+.status-dot.failed  { background: rgba(248,81,73,.15);  color: var(--accent-red); }
+
+.run-info { min-width: 0; flex: 1; }
+.run-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.run-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+.run-num  { color: var(--text-muted); font-size: 12px; }
+.run-meta { display: flex; align-items: center; gap: 4px; color: var(--text-muted); font-size: 11px; margin-top: 3px; flex-wrap: wrap; }
+.run-meta .sep { opacity: .4; }
+.run-duration { color: var(--text-secondary); font-size: 11px; margin-top: 2px; }
+
+/* ── ST badges ── */
+.st-badges { display: flex; align-items: center; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 20px; padding: 0 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity .15s, transform .1s; white-space: nowrap;
+}
+.badge:hover { opacity: .85; transform: scale(1.02); }
+.badge-amber  { background: var(--badge-amber-bg); border-color: var(--badge-amber-border); color: var(--accent-amber); }
+.badge-green  { background: var(--badge-green-bg); border-color: var(--badge-green-border); color: var(--accent-green); }
+.badge-beta   { background: var(--badge-blue-bg); border-color: var(--badge-blue-border); color: var(--accent-blue); font-size: 9px; height: 16px; padding: 0 5px; }
+
+/* ── Savings cell ── */
+.savings-cell { display: flex; flex-direction: column; gap: 2px; padding-top: 1px; }
+.savings-main { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.savings-main.green { color: var(--accent-green); }
+.savings-main.amber { color: var(--accent-amber); }
+.savings-main.muted { color: var(--text-muted); font-weight: 400; }
+.savings-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+.savings-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.savings-chip {
+  font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border);
+}
+.savings-chip.green { color: var(--accent-green); border-color: var(--badge-green-border); background: var(--badge-green-bg); }
+.savings-chip.amber { color: var(--accent-amber); border-color: var(--badge-amber-border); background: var(--badge-amber-bg); }
+
+/* ── Trigger / Time ── */
+.trigger-cell { display: flex; flex-direction: column; gap: 2px; }
+.trigger-by { font-size: 12px; color: var(--text-secondary); }
+.trigger-who { display: flex; align-items: center; gap: 5px; font-size: 12px; margin-top: 1px; }
+.avatar { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.time-cell { display: flex; flex-direction: column; gap: 2px; }
+.time-val { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.time-finish { color: var(--text-muted); }
+.actions-cell { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
+.action-icon { color: var(--text-muted); font-size: 14px; cursor: pointer; }
+.action-icon:hover { color: var(--text-primary); }
+
+/* ── Slide panel ── */
+.slide-panel {
+  position: fixed; top: 52px; right: 0; bottom: 0; width: var(--slide-width);
+  background: var(--bg-slide); border-left: 1px solid var(--border);
+  overflow-y: auto; transform: translateX(100%); transition: transform .25s ease;
+  z-index: 100; display: flex; flex-direction: column;
+}
+.slide-panel.open { transform: translateX(0); }
+.panel-header {
+  padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0;
+}
+.panel-title { font-size: 14px; font-weight: 700; }
+.panel-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.panel-close {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; transition: background .12s;
+}
+.panel-close:hover { background: var(--bg-card); color: var(--text-primary); }
+.panel-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.panel-footer { padding: 14px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+/* ── Feature cards ── */
+.feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.feature-card.active-card { border-color: var(--badge-green-border); background: rgba(63,185,80,.04); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.card-title { font-size: 13px; font-weight: 700; }
+.card-status { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+.card-status.active    { background: var(--badge-green-bg); color: var(--accent-green); border: 1px solid var(--badge-green-border); }
+.card-status.available { background: var(--badge-amber-bg); color: var(--accent-amber); border: 1px solid var(--badge-amber-border); }
+.card-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5; }
+.card-metric {
+  background: var(--bg-panel); border-radius: 6px; padding: 8px 10px;
+  margin-bottom: 10px; display: flex; flex-direction: column; gap: 3px;
+}
+.metric-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.metric-value { font-size: 14px; font-weight: 700; color: var(--accent-green); }
+.metric-value.amber { color: var(--accent-amber); }
+.metric-note { font-size: 11px; color: var(--text-muted); }
+.card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.card-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border); }
+.card-tag.check { color: var(--accent-green); border-color: var(--badge-green-border); background: var(--badge-green-bg); }
+.card-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn-primary {
+  height: 30px; padding: 0 12px; background: var(--accent-blue); color: #fff;
+  font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; gap: 5px; transition: opacity .15s; white-space: nowrap;
+}
+.btn-primary:hover { opacity: .85; }
+.btn-primary.green-btn { background: #238636; }
+.btn-link {
+  height: 30px; padding: 0 8px; background: none; color: var(--accent-blue);
+  font-size: 12px; font-weight: 500; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+}
+.btn-link:hover { text-decoration: underline; }
+.btn-secondary {
+  height: 30px; padding: 0 12px; background: var(--bg-panel);
+  border: 1px solid var(--border); color: var(--text-primary);
+  font-size: 12px; font-weight: 500; border-radius: 6px; cursor: pointer;
+}
+.callout {
+  border: 1px solid rgba(210,153,34,.35); background: rgba(210,153,34,.06);
+  border-radius: 6px; padding: 10px 12px; font-size: 11px;
+  color: var(--text-secondary); line-height: 1.6; margin-top: 10px;
+}
+.callout strong { color: var(--accent-amber); }
+
+/* ── Insights CTA banner ── */
+.insights-banner {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.insights-banner-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.insights-banner-text strong { color: var(--text-primary); display: block; margin-bottom: 2px; }
+
+/* ── Scenario selector ── */
+.scenario-bar {
+  background: var(--bg-sidebar); border-bottom: 1px solid var(--border);
+  padding: 8px 24px; display: flex; gap: 6px; align-items: center; flex-shrink: 0;
+}
+.scenario-label { font-size: 11px; color: var(--text-muted); margin-right: 4px; }
+.scenario-btn {
+  height: 26px; padding: 0 10px; border: 1px solid var(--border); border-radius: 20px;
+  background: var(--bg-panel); color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all .12s;
+}
+.scenario-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.scenario-btn.active { border-color: var(--accent-blue); background: var(--badge-blue-bg); color: var(--accent-blue); font-weight: 600; }
+
+/* ── Legend ── */
+.legend {
+  padding: 10px 24px; background: var(--bg-sidebar); border-top: 1px solid var(--border);
+  display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted);
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+
+/* ── Tooltip ── */
+.tooltip-anchor { position: relative; display: inline-flex; }
+.tooltip-box {
+  position: absolute; bottom: calc(100% + 8px); left: 0; width: 250px;
+  background: var(--bg-tooltip); border: 1px solid var(--border-light); border-radius: 8px;
+  padding: 10px 12px; font-size: 11px; line-height: 1.6; color: var(--text-secondary);
+  pointer-events: none; opacity: 0; transform: translateY(4px);
+  transition: opacity .15s, transform .15s; z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.tooltip-anchor:hover .tooltip-box { opacity: 1; transform: translateY(0); }
+.tooltip-box .tt-title { font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.tooltip-box .tt-item { display: flex; gap: 6px; margin-bottom: 5px; }
+.tooltip-box .tt-icon { flex-shrink: 0; width: 14px; }
+.tooltip-box .tt-name { color: var(--text-primary); font-weight: 600; }
+.tooltip-box .tt-val { font-size: 10px; color: var(--text-muted); }
+.tooltip-box .tt-hint { color: var(--text-muted); font-size: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="sidebar">
+    <div class="sidebar-icon active">◈</div>
+    <div class="sidebar-icon">⊞</div>
+    <div class="sidebar-icon">↑</div>
+    <div class="sidebar-icon">⌁</div>
+    <div class="sidebar-icon">⚙</div>
+    <div class="sidebar-icon">⊙</div>
+    <div class="sidebar-icon" style="margin-top:auto;padding-bottom:16px;">▦</div>
+  </div>
+
+  <div class="main" id="mainContent">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#58a6ff" stroke-width="2"/><path d="M8 12h8M12 8l4 4-4 4" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        CircleCI <div class="dot"></div>
+      </div>
+      <div class="topbar-search">🔍 Search or go to… <span style="margin-left:auto;font-size:10px;opacity:.5">cmd+/</span></div>
+      <div class="topbar-actions">
+        <div style="color:var(--text-muted);font-size:14px;cursor:pointer">☀</div>
+        <div style="color:var(--text-muted);font-size:14px;cursor:pointer">🔔</div>
+        <div style="color:var(--text-muted);font-size:14px;cursor:pointer">?</div>
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--accent-purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">LR</div>
+      </div>
+    </div>
+
+    <!-- Scenario switcher -->
+    <div class="scenario-bar">
+      <span class="scenario-label">Show scenario:</span>
+      <button class="scenario-btn active" onclick="setScenario('b')" id="btn-b">B — Eligible, not enabled</button>
+      <button class="scenario-btn" onclick="setScenario('c')" id="btn-c">C — Partially active</button>
+      <button class="scenario-btn" onclick="setScenario('d')" id="btn-d">D — All active</button>
+      <button class="scenario-btn" onclick="setScenario('a')" id="btn-a">A — Not eligible</button>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div class="page-title"><span style="font-size:18px">⊟</span> Pipelines</div>
+        <div class="toggle-group">
+          <div class="toggle"></div> Updated view
+          <button style="height:32px;padding:0 14px;background:var(--bg-panel);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;">↑ Trigger pipeline</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-chip active">All Pipelines</div>
+        <div class="filter-chip">My pipelines</div>
+        <div class="filter-chip">Default branch</div>
+        <div class="filter-chip">Failure</div>
+        <div class="filter-chip">Needs Approval</div>
+        <div class="filter-chip">Running</div>
+        <div class="filter-chip" style="margin-left:auto;">⋯</div>
+        <div class="filter-chip">Status <span class="arrow">▾</span></div>
+        <div class="filter-chip">Project <span class="arrow">▾</span></div>
+        <div class="filter-chip active">Last 14 days <span class="arrow">▾</span></div>
+        <div class="filter-chip">Trigger <span class="arrow">▾</span></div>
+        <div class="filter-chip">Actor <span class="arrow">▾</span></div>
+      </div>
+
+      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <!-- Header -->
+        <div class="table-header">
+          <div class="col-runs">PIPELINE RUNS</div>
+          <div class="col-trigger">TRIGGER</div>
+          <div class="col-time">START / FINISH</div>
+          <div class="col-savings" style="display:flex;align-items:center;gap:5px;">
+            SAVINGS
+            <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--badge-blue-bg);color:var(--accent-blue);border:1px solid var(--badge-blue-border);font-weight:700;letter-spacing:0;">Beta</span>
+          </div>
+          <div class="col-actions">ACTIONS</div>
+        </div>
+
+        <!-- ── Focus row (scenario-driven) ── -->
+        <div class="pipeline-row" id="focusRow" onclick="togglePanel()">
+          <div class="run-cell col-runs">
+            <div class="status-dot success">✓</div>
+            <div class="run-info">
+              <div class="run-name-row">
+                <span class="run-name">feat: add smarter testing indicator to pipeline rows</span>
+                <span class="run-num">#90135</span>
+              </div>
+              <div class="run-meta">
+                <span>web-ui-consolidated</span><span class="sep">·</span>
+                <span>dogfood pipeline</span><span class="sep">·</span>
+                <span>web-ui-consolidated</span><span class="sep">/</span>
+                <span>feature/st-pipeline-indicator</span><span class="sep">→</span>
+                <span style="font-family:var(--font-mono);font-size:10px;">b538213</span>
+              </div>
+              <div class="run-duration">4m 53s</div>
+              <div class="st-badges" id="stBadges"></div>
+            </div>
+          </div>
+          <div class="trigger-cell col-trigger">
+            <div class="trigger-by">PR updated by</div>
+            <div class="trigger-who">
+              <div class="avatar" style="background:#6f42c1;">CF</div>
+              Charles Francoise
+            </div>
+          </div>
+          <div class="time-cell col-time">
+            <div class="time-val">15:02:03 UTC</div>
+            <div class="time-val time-finish">15:06:58 UTC</div>
+          </div>
+          <div class="savings-cell col-savings" id="focusSavings"></div>
+          <div class="actions-cell col-actions">
+            <span class="action-icon">↺</span>
+            <span class="action-icon">◎</span>
+            <span class="action-icon">✕</span>
+            <span class="action-icon">🔧</span>
+          </div>
+        </div>
+
+        <!-- ── Row 2 ── -->
+        <div class="pipeline-row">
+          <div class="run-cell col-runs">
+            <div class="status-dot success">✓</div>
+            <div class="run-info">
+              <div class="run-name-row">
+                <span class="run-name">Merge pull request #1166 from circleci/add-even-more-soc-apiv3</span>
+                <span class="run-num">#10456</span>
+              </div>
+              <div class="run-meta">
+                <span>public-api-service</span><span class="sep">·</span><span>generate-docs</span><span class="sep">·</span>
+                <span>public-api-service</span><span class="sep">/</span><span>main</span><span class="sep">→</span>
+                <span style="font-family:var(--font-mono);font-size:10px;">48286ed</span>
+              </div>
+              <div class="run-duration">34s</div>
+            </div>
+          </div>
+          <div class="trigger-cell col-trigger">
+            <div class="trigger-by">Pushed by</div>
+            <div class="trigger-who"><div class="avatar" style="background:#0075ca;">SC</div> Shawon Crosen</div>
+          </div>
+          <div class="time-cell col-time">
+            <div class="time-val">15:09:53 UTC</div>
+            <div class="time-val time-finish">15:10:27 UTC</div>
+          </div>
+          <div class="savings-cell col-savings"><span class="savings-main muted">—</span></div>
+          <div class="actions-cell col-actions">
+            <span class="action-icon">↺</span><span class="action-icon">◎</span>
+            <span class="action-icon">✕</span><span class="action-icon">🔧</span>
+          </div>
+        </div>
+
+        <!-- ── Row 3 ── -->
+        <div class="pipeline-row">
+          <div class="run-cell col-runs">
+            <div class="status-dot running">↻</div>
+            <div class="run-info">
+              <div class="run-name-row">
+                <span class="run-name">fix(pipelines): namespace batch workflow cache key to stop list crash (#8049)</span>
+                <span class="run-num">#90136</span>
+              </div>
+              <div class="run-meta">
+                <span>web-ui-consolidated</span><span class="sep">·</span><span>soc-project-setup-e2e-clean-up</span><span class="sep">·</span>
+                <span>web-ui-consolidated</span><span class="sep">/</span><span>main</span><span class="sep">→</span>
+                <span style="font-family:var(--font-mono);font-size:10px;">4905c0a</span>
+              </div>
+              <div class="run-duration" style="color:var(--accent-blue);">Running · 8m 22s</div>
+            </div>
+          </div>
+          <div class="trigger-cell col-trigger">
+            <div class="trigger-by">Scheduled by</div>
+            <div class="trigger-who" style="color:var(--text-muted);font-size:11px;">📅 clean up e2e project setup</div>
+          </div>
+          <div class="time-cell col-time">
+            <div class="time-val">15:08:15 UTC</div>
+            <div class="time-val time-finish">—</div>
+          </div>
+          <div class="savings-cell col-savings"><span class="savings-main muted">—</span></div>
+          <div class="actions-cell col-actions">
+            <span class="action-icon">↺</span><span class="action-icon">◎</span>
+            <span class="action-icon" style="color:var(--accent-red);">✕</span><span class="action-icon">🔧</span>
+          </div>
+        </div>
+
+        <!-- ── Row 4 ── -->
+        <div class="pipeline-row">
+          <div class="run-cell col-runs">
+            <div class="status-dot failed">✕</div>
+            <div class="run-info">
+              <div class="run-name-row">
+                <span class="run-name">Show confirmation modal before cancelling a workflow</span>
+                <span class="run-num">#90133</span>
+              </div>
+              <div class="run-meta">
+                <span>web-ui-consolidated</span><span class="sep">·</span><span>dogfood pipeline</span><span class="sep">·</span>
+                <span>web-ui-consolidated</span><span class="sep">/</span>
+                <span style="font-family:var(--font-mono);font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">stig/pipe-9709-add-modal-confirmation</span>
+              </div>
+              <div class="run-duration">17m 15s</div>
+            </div>
+          </div>
+          <div class="trigger-cell col-trigger">
+            <div class="trigger-by">Pushed by</div>
+            <div class="trigger-who"><div class="avatar" style="background:#e3611c;">SB</div> Stig Brautaset</div>
+          </div>
+          <div class="time-cell col-time">
+            <div class="time-val">14:45:24 UTC</div>
+            <div class="time-val time-finish">15:02:39 UTC</div>
+          </div>
+          <div class="savings-cell col-savings"><span class="savings-main muted">—</span></div>
+          <div class="actions-cell col-actions">
+            <span class="action-icon">↺</span><span class="action-icon">◎</span>
+            <span class="action-icon">✕</span><span class="action-icon">🔧</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span style="color:var(--accent-amber)">⚡</span> Pipeline optimization available — click badge to set up</div>
+      <div class="legend-item"><span style="color:var(--accent-green)">✓</span> Feature active — savings shown in SAVINGS column</div>
+      <div class="legend-item" style="margin-left:auto;">Click row 1 to toggle side panel</div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide-out panel -->
+<div class="slide-panel" id="slidePanel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title" id="panelTitle">Smarter Testing</div>
+      <div class="panel-subtitle" id="panelSubtitle">web-ui-consolidated</div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+  <div class="panel-footer" id="panelFooter" style="display:none;"></div>
+</div>
+
+<script>
+// ── Scenario data ─────────────────────────────────────────────────────
+const SCENARIOS = {
+  a: {
+    badges: [],
+    savings: { main: '—', cls: 'muted', sub: '', chips: [] },
+    panelTitle: 'No optimizations available',
+    panelSubtitle: 'web-ui-consolidated',
+    showInsights: false,
+    cards: []
+  },
+
+  b: {
+    badges: [
+      { cls: 'badge-amber', text: '⚡ Pipeline optimizations · 3 available', tooltip: true },
+      { cls: 'badge-beta', text: 'Beta' }
+    ],
+    savings: {
+      main: 'Est. ~25m/month',
+      cls: 'amber',
+      sub: '3 features available',
+      chips: [
+        { label: 'TIA ~15m/mo', cls: 'amber' },
+        { label: 'DTS ~6m/mo', cls: 'amber' },
+        { label: 'ARFT ~4m/mo', cls: 'amber' }
+      ]
+    },
+    panelTitle: 'Pipeline optimizations available',
+    panelSubtitle: 'web-ui-consolidated  ·  3 features available',
+    showInsights: false,
+    cards: [
+      {
+        type: 'available',
+        title: 'Test Impact Analysis',
+        desc: 'Run only the tests affected by your code changes. PRs that touch one module skip the rest of the suite entirely.',
+        metric: { label: 'Estimated monthly savings', value: '~15m/month', note: 'Based on ~145 tests/day, ~60% skip rate on average', cls: 'amber' },
+        tags: ['Jest ✓', 'parallelism: 4'],
+        cta: 'TIA'
+      },
+      {
+        type: 'available',
+        title: 'Dynamic Test Splitting',
+        desc: 'Distribute tests evenly across all parallel nodes so every node finishes at the same time — no idle nodes waiting.',
+        metric: { label: 'Estimated monthly savings', value: '~6m/month', note: 'Based on 4 parallel nodes, ~5 runs/day with uneven timing', cls: 'amber' },
+        tags: ['parallelism: 4 ✓'],
+        cta: 'DTS'
+      },
+      {
+        type: 'available',
+        title: 'Auto Rerun Failed Tests',
+        desc: 'Automatically retries failed test atoms. Recovers from flaky tests without rerunning the entire suite.',
+        metric: { label: 'Estimated monthly savings', value: '~4m/month', note: 'Based on 23 flaky failures/month avg for this project', cls: 'amber' },
+        tags: ['JUnit XML ✓', 'flaky history detected'],
+        cta: 'ARFT'
+      }
+    ]
+  },
+
+  c: {
+    badges: [
+      { cls: 'badge-green', text: '✓ TIA active', tooltip: false },
+      { cls: 'badge-amber', text: '⚡ +2 available', tooltip: true },
+      { cls: 'badge-beta', text: 'Beta' }
+    ],
+    savings: {
+      main: '83% fewer tests',
+      cls: 'green',
+      sub: '52 of 312 tests ran · 3m 12s saved',
+      chips: [
+        { label: 'TIA active', cls: 'green' },
+        { label: 'DTS ~6m/mo', cls: 'amber' },
+        { label: 'ARFT ~4m/mo', cls: 'amber' }
+      ]
+    },
+    panelTitle: 'Smarter Testing — partially active',
+    panelSubtitle: 'web-ui-consolidated  ·  1 of 3 features enabled',
+    showInsights: false,
+    cards: [
+      {
+        type: 'active',
+        title: 'Test Impact Analysis',
+        desc: 'Running. Selecting only tests affected by each commit.',
+        metric: { label: 'This run', value: '83% fewer tests ran', note: '52 of 312 tests selected · 3m 12s saved vs. 30-day avg', cls: '' },
+        tags: [],
+        cta: null
+      },
+      {
+        type: 'available',
+        title: 'Dynamic Test Splitting',
+        desc: 'Distribute tests evenly across all 4 parallel nodes so every node finishes at the same time.',
+        metric: { label: 'Estimated monthly savings', value: '~6m/month', note: 'Based on 4 parallel nodes, ~5 runs/day with uneven timing', cls: 'amber' },
+        tags: ['parallelism: 4 ✓'],
+        cta: 'DTS'
+      },
+      {
+        type: 'available',
+        title: 'Auto Rerun Failed Tests',
+        desc: 'Automatically retries failed test atoms. Recovers from flaky tests without requiring manual intervention.',
+        metric: { label: 'Estimated monthly savings', value: '~4m/month', note: 'Based on 23 flaky failures/month avg for this project', cls: 'amber' },
+        tags: ['JUnit XML ✓', 'flaky history detected'],
+        cta: 'ARFT'
+      }
+    ]
+  },
+
+  d: {
+    badges: [
+      { cls: 'badge-green', text: '✓ Smarter Testing active', tooltip: true },
+      { cls: 'badge-beta', text: 'Beta' }
+    ],
+    savings: {
+      main: '4m 54s saved',
+      cls: 'green',
+      sub: 'All 3 features active this run',
+      chips: [
+        { label: 'TIA 83%', cls: 'green' },
+        { label: 'DTS 1m 08s', cls: 'green' },
+        { label: 'ARFT 2↺', cls: 'green' }
+      ]
+    },
+    panelTitle: 'Smarter Testing — all active',
+    panelSubtitle: 'web-ui-consolidated  ·  3 of 3 features enabled',
+    showInsights: true,
+    cards: [
+      {
+        type: 'active',
+        title: 'Test Impact Analysis',
+        desc: 'Running. Selecting only tests affected by each commit.',
+        metric: { label: 'This run', value: '83% fewer tests ran', note: '52 of 312 tests selected · 3m 12s saved vs. 30-day avg', cls: '' },
+        tags: [],
+        cta: null
+      },
+      {
+        type: 'active',
+        title: 'Dynamic Test Splitting',
+        desc: 'Running. Tests distributed evenly across all 4 parallel nodes.',
+        metric: { label: 'This run', value: '1m 08s saved', note: 'All nodes finished within 4s of each other · vs. 30-day avg', cls: '' },
+        tags: [],
+        cta: null
+      },
+      {
+        type: 'active',
+        title: 'Auto Rerun Failed Tests',
+        desc: 'Running. Automatically retried failed atoms this run.',
+        metric: { label: 'This run', value: '2 flakes recovered', note: '34s saved vs. manual rerun · job succeeded', cls: '' },
+        tags: [],
+        cta: null
+      }
+    ]
+  }
+};
+
+// ── Render badges ─────────────────────────────────────────────────────
+function renderBadges(scenario) {
+  const s = SCENARIOS[scenario];
+  const container = document.getElementById('stBadges');
+  container.innerHTML = '';
+  s.badges.forEach(b => {
+    if (b.tooltip) {
+      const anchor = document.createElement('div');
+      anchor.className = 'tooltip-anchor';
+      const badge = document.createElement('span');
+      badge.className = `badge ${b.cls}`;
+      badge.textContent = b.text;
+      badge.onclick = e => { e.stopPropagation(); openPanel(); };
+      const tt = document.createElement('div');
+      tt.className = 'tooltip-box';
+      tt.innerHTML = buildTooltip(scenario);
+      anchor.appendChild(badge);
+      anchor.appendChild(tt);
+      container.appendChild(anchor);
+    } else {
+      const badge = document.createElement('span');
+      badge.className = `badge ${b.cls}`;
+      badge.textContent = b.text;
+      container.appendChild(badge);
+    }
+  });
+}
+
+function buildTooltip(scenario) {
+  const s = SCENARIOS[scenario];
+  const available = s.cards.filter(c => c.type === 'available');
+  const active    = s.cards.filter(c => c.type === 'active');
+  let html = '<div class="tt-title">Pipeline optimizations</div>';
+  active.forEach(c => {
+    html += `<div class="tt-item"><span class="tt-icon" style="color:var(--accent-green)">✓</span><div><div class="tt-name">${c.title}</div><div class="tt-val">${c.metric.value}</div></div></div>`;
+  });
+  available.forEach(c => {
+    html += `<div class="tt-item"><span class="tt-icon" style="color:var(--accent-amber)">⚡</span><div><div class="tt-name">${c.title}</div><div class="tt-val">${c.metric.value}</div></div></div>`;
+  });
+  html += '<div class="tt-hint">Click to set up or view details</div>';
+  return html;
+}
+
+// ── Render savings cell ───────────────────────────────────────────────
+function renderSavings(scenario) {
+  const sv = SCENARIOS[scenario].savings;
+  const cell = document.getElementById('focusSavings');
+  let html = `<span class="savings-main ${sv.cls}">${sv.main}</span>`;
+  if (sv.sub) html += `<span class="savings-sub">${sv.sub}</span>`;
+  if (sv.chips.length) {
+    html += '<div class="savings-chips">' +
+      sv.chips.map(ch => `<span class="savings-chip ${ch.cls}">${ch.label}</span>`).join('') +
+      '</div>';
+  }
+  cell.innerHTML = html;
+}
+
+// ── Render panel ──────────────────────────────────────────────────────
+function renderPanel(scenario) {
+  const s = SCENARIOS[scenario];
+  document.getElementById('panelTitle').textContent = s.panelTitle;
+  document.getElementById('panelSubtitle').textContent = s.panelSubtitle;
+
+  const body = document.getElementById('panelBody');
+  const footer = document.getElementById('panelFooter');
+  body.innerHTML = '';
+
+  if (s.cards.length === 0) {
+    body.innerHTML = `
+      <div style="color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center;line-height:1.8;">
+        This project does not meet the current eligibility criteria for any Smarter Testing feature.<br><br>
+        <span style="font-size:11px;">Requirements: supported test framework · JUnit XML output · <code>store_test_results</code> configured</span>
+      </div>
+      <a href="https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/" target="_blank"
+         style="color:var(--accent-blue);font-size:12px;text-decoration:none;">View Smarter Testing docs ↗</a>
+    `;
+    footer.style.display = 'none';
+    return;
+  }
+
+  s.cards.forEach(c => {
+    const card = document.createElement('div');
+    card.className = `feature-card ${c.type === 'active' ? 'active-card' : ''}`;
+    const statusCls = c.type === 'active' ? 'active' : 'available';
+    const statusLabel = c.type === 'active' ? 'Active' : 'Available';
+
+    let tagsHTML = c.tags.length
+      ? `<div class="card-tags">${c.tags.map(t => `<span class="card-tag ${t.includes('✓') ? 'check' : ''}">${t}</span>`).join('')}</div>`
+      : '';
+
+    let actionsHTML = '';
+    if (c.cta) {
+      actionsHTML = `
+        <div class="card-actions">
+          <button class="btn-primary" onclick="handleCTA('${c.cta}')">⌨ Set up with Claude Code</button>
+          <button class="btn-link" onclick="openGettingStarted()">View docs ↗</button>
+        </div>
+        <div class="callout">
+          <strong>⚠ Open question:</strong> "Set up with Claude Code" will attempt a <code>claude://</code> deeplink. Requires CLI installed. Fallback behavior TBD with eng.
+        </div>`;
+    } else {
+      actionsHTML = `<div class="card-actions"><button class="btn-secondary" onclick="openRunDetails()">View run details ↗</button></div>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title">${c.title}</div>
+        <span class="card-status ${statusCls}">${statusLabel}</span>
+      </div>
+      <div class="card-desc">${c.desc}</div>
+      <div class="card-metric">
+        <div class="metric-label">${c.metric.label}</div>
+        <div class="metric-value ${c.metric.cls}">${c.metric.value}</div>
+        <div class="metric-note">${c.metric.note}</div>
+      </div>
+      ${tagsHTML}${actionsHTML}`;
+    body.appendChild(card);
+  });
+
+  // Insights CTA for State D
+  if (s.showInsights) {
+    footer.style.display = 'block';
+    footer.innerHTML = `
+      <div class="insights-banner">
+        <div class="insights-banner-text">
+          <strong>View Test Insights</strong>
+          Dig into flaky tests, slowest tests, and historical savings for this project.
+        </div>
+        <button class="btn-primary green-btn" style="flex-shrink:0;" onclick="openInsights()">
+          ⌁ Open Insights
+        </button>
+      </div>`;
+  } else {
+    footer.style.display = 'none';
+  }
+}
+
+// ── Panel open/close ──────────────────────────────────────────────────
+let panelOpen = false;
+let currentScenario = 'b';
+
+function togglePanel() { panelOpen ? closePanel() : openPanel(); }
+
+function openPanel() {
+  panelOpen = true;
+  document.getElementById('slidePanel').classList.add('open');
+  document.getElementById('mainContent').style.marginRight = '400px';
+  document.getElementById('focusRow').classList.add('active-panel');
+  renderPanel(currentScenario);
+}
+
+function closePanel() {
+  panelOpen = false;
+  document.getElementById('slidePanel').classList.remove('open');
+  document.getElementById('mainContent').style.marginRight = '0';
+  document.getElementById('focusRow').classList.remove('active-panel');
+}
+
+// ── Scenario switch ───────────────────────────────────────────────────
+function setScenario(s) {
+  currentScenario = s;
+  ['a','b','c','d'].forEach(k =>
+    document.getElementById(`btn-${k}`).classList.toggle('active', k === s)
+  );
+  renderBadges(s);
+  renderSavings(s);
+  if (panelOpen) renderPanel(s);
+}
+
+// ── CTA handlers ──────────────────────────────────────────────────────
+function handleCTA(feature) {
+  const prompts = {
+    TIA:  'I want to set up Test Impact Analysis for my CircleCI project web-ui-consolidated. It uses Jest. Please follow https://circleci.com/docs/guides/test/set-up-test-impact-analysis/ and configure .circleci/test-suites.yml.',
+    DTS:  'I want to set up Dynamic Test Splitting for my CircleCI project web-ui-consolidated. It runs with parallelism: 4. Please follow https://circleci.com/docs/guides/test/use-dynamic-test-splitting/ and configure .circleci/test-suites.yml.',
+    ARFT: 'I want to set up Auto Rerun Failed Tests for my CircleCI project web-ui-consolidated. Please follow https://circleci.com/docs/guides/test/auto-rerun-failed-tests/ and configure max-auto-rerun in .circleci/test-suites.yml.'
+  };
+  alert(`[Prototype] Would open deeplink:\n\nclaude://open?prompt=${encodeURIComponent(prompts[feature])}\n\nFallback: show install prompt if Claude Code not detected.`);
+}
+
+function openGettingStarted() {
+  window.open('https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/', '_blank');
+}
+
+function openInsights() {
+  alert('[Prototype] Would navigate to Test Insights for web-ui-consolidated\n(e.g. /insights/web-ui-consolidated/tests)');
+}
+
+function openRunDetails() {
+  alert('[Prototype] Would navigate to run details page.');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+renderBadges('b');
+renderSavings('b');
+</script>
+</body>
+</html>
