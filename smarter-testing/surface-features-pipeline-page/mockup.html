@@ -165,13 +165,6 @@ body {
 .savings-main.amber { color: var(--accent-amber); }
 .savings-main.muted { color: var(--text-muted); font-weight: 400; }
 .savings-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
-.savings-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
-.savings-chip {
-  font-size: 10px; padding: 1px 5px; border-radius: 3px;
-  background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border);
-}
-.savings-chip.green { color: var(--accent-green); border-color: var(--badge-green-border); background: var(--badge-green-bg); }
-.savings-chip.amber { color: var(--accent-amber); border-color: var(--badge-amber-border); background: var(--badge-amber-bg); }
 
 /* ── Trigger / Time ── */
 .trigger-cell { display: flex; flex-direction: column; gap: 2px; }
@@ -556,12 +549,7 @@ const SCENARIOS = {
     savings: {
       main: 'Est. ~25m/month',
       cls: 'amber',
-      sub: '3 features available',
-      chips: [
-        { label: 'TIA ~15m/mo', cls: 'amber' },
-        { label: 'DTS ~6m/mo', cls: 'amber' },
-        { label: 'ARFT ~4m/mo', cls: 'amber' }
-      ]
+      sub: '3 features available'
     },
     panelTitle: 'Pipeline optimizations available',
     panelSubtitle: 'web-ui-consolidated  ·  3 features available',
@@ -603,12 +591,7 @@ const SCENARIOS = {
     savings: {
       main: '83% fewer tests',
       cls: 'green',
-      sub: '52 of 312 tests ran · 3m 12s saved',
-      chips: [
-        { label: 'TIA active', cls: 'green' },
-        { label: 'DTS ~6m/mo', cls: 'amber' },
-        { label: 'ARFT ~4m/mo', cls: 'amber' }
-      ]
+      sub: '52 of 312 tests ran · 3m 12s saved'
     },
     panelTitle: 'Smarter Testing — partially active',
     panelSubtitle: 'web-ui-consolidated  ·  1 of 3 features enabled',
@@ -649,12 +632,7 @@ const SCENARIOS = {
     savings: {
       main: '4m 54s saved',
       cls: 'green',
-      sub: 'All 3 features active this run',
-      chips: [
-        { label: 'TIA 83%', cls: 'green' },
-        { label: 'DTS 1m 08s', cls: 'green' },
-        { label: 'ARFT 2↺', cls: 'green' }
-      ]
+      sub: 'All 3 features active this run'
     },
     panelTitle: 'Smarter Testing — all active',
     panelSubtitle: 'web-ui-consolidated  ·  3 of 3 features enabled',
@@ -737,11 +715,6 @@ function renderSavings(scenario) {
   const cell = document.getElementById('focusSavings');
   let html = `<span class="savings-main ${sv.cls}">${sv.main}</span>`;
   if (sv.sub) html += `<span class="savings-sub">${sv.sub}</span>`;
-  if (sv.chips.length) {
-    html += '<div class="savings-chips">' +
-      sv.chips.map(ch => `<span class="savings-chip ${ch.cls}">${ch.label}</span>`).join('') +
-      '</div>';
-  }
   cell.innerHTML = html;
 }
 
