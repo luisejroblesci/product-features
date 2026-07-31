@@ -269,6 +269,24 @@ body {
 .scenario-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
 .scenario-btn.active { border-color: var(--accent-blue); background: var(--badge-blue-bg); color: var(--accent-blue); font-weight: 600; }
 
+/* ── Dismiss UX ── */
+.btn-dismiss {
+  height: 26px; padding: 0 8px; background: none;
+  border: none; color: var(--text-muted); font-size: 11px;
+  cursor: pointer; display: inline-flex; align-items: center;
+}
+.btn-dismiss:hover { color: var(--text-primary); text-decoration: underline; }
+
+.dismissed-notice {
+  color: var(--text-muted); font-size: 12px;
+  padding: 24px 0; text-align: center; line-height: 1.8;
+}
+
+.restore-link {
+  padding-top: 12px; border-top: 1px solid var(--border);
+  margin-top: 4px; display: flex; justify-content: center;
+}
+
 /* ── Legend ── */
 .legend {
   padding: 10px 24px; background: var(--bg-sidebar); border-top: 1px solid var(--border);
@@ -556,6 +574,7 @@ const SCENARIOS = {
     showInsights: false,
     cards: [
       {
+        key: 'TIA',
         type: 'available',
         title: 'Test Impact Analysis',
         desc: 'Run only the tests affected by your code changes. PRs that touch one module skip the rest of the suite entirely.',
@@ -564,6 +583,7 @@ const SCENARIOS = {
         cta: 'TIA'
       },
       {
+        key: 'DTS',
         type: 'available',
         title: 'Dynamic Test Splitting',
         desc: 'Distribute tests evenly across all parallel nodes so every node finishes at the same time — no idle nodes waiting.',
@@ -572,6 +592,7 @@ const SCENARIOS = {
         cta: 'DTS'
       },
       {
+        key: 'ARFT',
         type: 'available',
         title: 'Auto Rerun Failed Tests',
         desc: 'Automatically retries failed test atoms. Recovers from flaky tests without rerunning the entire suite.',
@@ -598,6 +619,7 @@ const SCENARIOS = {
     showInsights: false,
     cards: [
       {
+        key: 'TIA',
         type: 'active',
         title: 'Test Impact Analysis',
         desc: 'Running. Selecting only tests affected by each commit.',
@@ -606,6 +628,7 @@ const SCENARIOS = {
         cta: null
       },
       {
+        key: 'DTS',
         type: 'available',
         title: 'Dynamic Test Splitting',
         desc: 'Distribute tests evenly across all 4 parallel nodes so every node finishes at the same time.',
@@ -614,6 +637,7 @@ const SCENARIOS = {
         cta: 'DTS'
       },
       {
+        key: 'ARFT',
         type: 'available',
         title: 'Auto Rerun Failed Tests',
         desc: 'Automatically retries failed test atoms. Recovers from flaky tests without requiring manual intervention.',
@@ -639,6 +663,7 @@ const SCENARIOS = {
     showInsights: true,
     cards: [
       {
+        key: 'TIA',
         type: 'active',
         title: 'Test Impact Analysis',
         desc: 'Running. Selecting only tests affected by each commit.',
@@ -647,6 +672,7 @@ const SCENARIOS = {
         cta: null
       },
       {
+        key: 'DTS',
         type: 'active',
         title: 'Dynamic Test Splitting',
         desc: 'Running. Tests distributed evenly across all 4 parallel nodes.',
@@ -655,6 +681,7 @@ const SCENARIOS = {
         cta: null
       },
       {
+        key: 'ARFT',
         type: 'active',
         title: 'Auto Rerun Failed Tests',
         desc: 'Running. Automatically retried failed atoms this run.',
@@ -666,13 +693,62 @@ const SCENARIOS = {
   }
 };
 
+// ── Dismissal state ───────────────────────────────────────────────────
+let dismissedFeatures = new Set(JSON.parse(localStorage.getItem('st-dismissed') || '[]'));
+
+function getVisibleAvailableCards(scenario) {
+  return SCENARIOS[scenario].cards.filter(
+    c => c.type === 'available' && !dismissedFeatures.has(c.key)
+  );
+}
+
+function dismissFeature(key) {
+  dismissedFeatures.add(key);
+  localStorage.setItem('st-dismissed', JSON.stringify([...dismissedFeatures]));
+  renderBadges(currentScenario);
+  renderSavings(currentScenario);
+  if (panelOpen) renderPanel(currentScenario);
+}
+
+function restoreDismissed() {
+  dismissedFeatures.clear();
+  localStorage.removeItem('st-dismissed');
+  renderBadges(currentScenario);
+  renderSavings(currentScenario);
+  if (panelOpen) renderPanel(currentScenario);
+}
+
 // ── Render badges ─────────────────────────────────────────────────────
 function renderBadges(scenario) {
   const s = SCENARIOS[scenario];
   const container = document.getElementById('stBadges');
   container.innerHTML = '';
+
+  const visibleAvailable = getVisibleAvailableCards(scenario);
+  const activeCards = s.cards.filter(c => c.type === 'active');
+
   s.badges.forEach(b => {
-    if (b.tooltip) {
+    // For amber badges, compute count dynamically and skip if nothing left
+    if (b.cls === 'badge-amber') {
+      if (visibleAvailable.length === 0) return;
+      const anchor = document.createElement('div');
+      anchor.className = 'tooltip-anchor';
+      const badge = document.createElement('span');
+      badge.className = `badge ${b.cls}`;
+      // Rewrite count in badge text
+      if (scenario === 'b') {
+        badge.textContent = `⚡ Pipeline optimizations · ${visibleAvailable.length} available`;
+      } else {
+        badge.textContent = `⚡ +${visibleAvailable.length} available`;
+      }
+      badge.onclick = e => { e.stopPropagation(); openPanel(); };
+      const tt = document.createElement('div');
+      tt.className = 'tooltip-box';
+      tt.innerHTML = buildTooltip(scenario);
+      anchor.appendChild(badge);
+      anchor.appendChild(tt);
+      container.appendChild(anchor);
+    } else if (b.tooltip) {
       const anchor = document.createElement('div');
       anchor.className = 'tooltip-anchor';
       const badge = document.createElement('span');
@@ -713,8 +789,27 @@ function buildTooltip(scenario) {
 function renderSavings(scenario) {
   const sv = SCENARIOS[scenario].savings;
   const cell = document.getElementById('focusSavings');
+  const visibleAvailable = getVisibleAvailableCards(scenario);
+  const activeCards = SCENARIOS[scenario].cards.filter(c => c.type === 'active');
+
+  // Scenario B: all-available — if everything dismissed, show empty
+  if (scenario === 'b' && visibleAvailable.length === 0) {
+    cell.innerHTML = `<span class="savings-main muted">—</span>`;
+    return;
+  }
+
   let html = `<span class="savings-main ${sv.cls}">${sv.main}</span>`;
-  if (sv.sub) html += `<span class="savings-sub">${sv.sub}</span>`;
+  if (sv.sub) {
+    // Update available count in the sub-label
+    let sub = sv.sub;
+    if (scenario === 'b') {
+      sub = `${visibleAvailable.length} feature${visibleAvailable.length !== 1 ? 's' : ''} available`;
+    } else if (scenario === 'c' && visibleAvailable.length !== 2) {
+      const remaining = visibleAvailable.length;
+      sub = sub.replace(/\d+ features? available/, `${remaining} feature${remaining !== 1 ? 's' : ''} available`);
+    }
+    html += `<span class="savings-sub">${sub}</span>`;
+  }
   cell.innerHTML = html;
 }
 
@@ -741,7 +836,14 @@ function renderPanel(scenario) {
     return;
   }
 
-  s.cards.forEach(c => {
+  const visibleCards = s.cards.filter(c => c.type === 'active' || !dismissedFeatures.has(c.key));
+  const anyDismissed = s.cards.some(c => c.type === 'available' && dismissedFeatures.has(c.key));
+
+  if (visibleCards.length === 0) {
+    body.innerHTML = `<div class="dismissed-notice">All suggestions dismissed for this project.<br><span style="font-size:11px;">Changed your mind?</span></div>`;
+  }
+
+  visibleCards.forEach(c => {
     const card = document.createElement('div');
     card.className = `feature-card ${c.type === 'active' ? 'active-card' : ''}`;
     const statusCls = c.type === 'active' ? 'active' : 'available';
@@ -760,6 +862,9 @@ function renderPanel(scenario) {
         </div>
         <div class="callout">
           <strong>⚠ Open question:</strong> "Set up with Claude Code" will attempt a <code>claude://</code> deeplink. Requires CLI installed. Fallback behavior TBD with eng.
+        </div>
+        <div style="margin-top:8px;">
+          <button class="btn-dismiss" onclick="dismissFeature('${c.key}')">Not interested</button>
         </div>`;
     } else {
       actionsHTML = `<div class="card-actions"><button class="btn-secondary" onclick="openRunDetails()">View run details ↗</button></div>`;
@@ -779,6 +884,13 @@ function renderPanel(scenario) {
       ${tagsHTML}${actionsHTML}`;
     body.appendChild(card);
   });
+
+  if (anyDismissed) {
+    const restore = document.createElement('div');
+    restore.className = 'restore-link';
+    restore.innerHTML = `<button class="btn-link" onclick="restoreDismissed()">↩ Restore dismissed suggestions</button>`;
+    body.appendChild(restore);
+  }
 
   // Insights CTA for State D
   if (s.showInsights) {
@@ -821,6 +933,8 @@ function closePanel() {
 
 // ── Scenario switch ───────────────────────────────────────────────────
 function setScenario(s) {
+  dismissedFeatures.clear();
+  localStorage.removeItem('st-dismissed');
   currentScenario = s;
   ['a','b','c','d'].forEach(k =>
     document.getElementById(`btn-${k}`).classList.toggle('active', k === s)

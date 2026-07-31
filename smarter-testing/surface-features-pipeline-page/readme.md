@@ -48,11 +48,23 @@ The project does not meet eligibility signals for any feature (e.g. uses an unsu
 
 | Feature | Proxy signal |
 |---|---|
-| Test Impact Analysis | Supported framework detected (Jest, pytest, Go, Vitest, RSpec); single-process test execution |
+| Test Impact Analysis | Supported framework detected (Jest, pytest, Go, Vitest, RSpec); single-process test execution; **not** E2E-heavy (see TIA Disqualifiers below) |
 | Dynamic Test Splitting | `parallelism > 1` in `.circleci/config.yml` for any test job |
 | Auto Rerun Failed Tests | `store_test_results` configured (JUnit XML); flaky test history present in Test Insights |
 
 > **Open with eng:** Confirm which signals are queryable at pipeline-run data layer. These are proxy signals.
+
+### TIA Disqualifiers
+
+Projects that are E2E-heavy should be excluded from TIA recommendations. Specifically, if Cypress or Playwright is detected and tests appear to call a running application (separate service), TIA will not work — coverage-based test selection requires single-process execution.
+
+### Test Runner Detection Caveat
+
+Test runners may be hidden behind task commands (e.g. a Makefile target or a custom wrapper script that calls `jest` or `pytest` internally). Parsing `.circleci/config.yml` alone won't always surface the runner directly. The detection pipeline needs to account for this indirection.
+
+### Feature Adoption Logic
+
+If **any single job** in a project is already using one of the three ST features, that feature is considered adopted for the project. Full coverage across all jobs is not required to count the feature as active.
 
 ---
 
@@ -77,6 +89,8 @@ Compare current run against the rolling 30-day average prior to feature activati
 | Single "View docs" CTA → Getting Started guide | All "View docs" links go to `https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/` rather than individual feature pages. Reduces friction for new users who need orientation before jumping into per-feature setup. |
 | "Set up with Claude Code" CTA → `claude://` deeplink | Hypothesis: a pre-populated Claude Code prompt lowers setup friction for users who already have the CLI. Open question: does the URI scheme exist? What is the fallback if not installed? |
 | Eligibility is project-level, not per-run | Badges appear on every run for the same project. No per-run eligibility recalculation. |
+| Dismissal UX required | Users who open the slide-out panel and decide they're not interested need a way to dismiss a feature recommendation. Once dismissed, that feature should not reappear as a suggestion for that project. (2026-07-31 planning session) |
+| E2E projects disqualified from TIA | Cypress/Playwright projects that test against a running app rely on separate services and are incompatible with single-process coverage — TIA should not be recommended for them. (2026-07-31 planning session) |
 
 ---
 
@@ -84,11 +98,22 @@ Compare current run against the rolling 30-day average prior to feature activati
 
 - Old pipelines UI (legacy view, "Updated view" toggle OFF)
 - Eligibility for projects without JUnit XML (non-standard test runners)
-- Dismiss / snooze for the eligibility badge
 - Org-level or team-level rollout controls
 - In-depth savings analytics page (link to existing Test Insights instead)
 - Mobile/responsive layout
 - Projects with `test-suites.yml` configured but feature flag off (partial config state)
+
+> **Note:** Dismiss / snooze was previously listed as out of scope but has been confirmed as needed — see Decisions Made above.
+
+---
+
+## Next Steps (as of 2026-07-31)
+
+1. **Data reach-out** — Connect with the data team to identify eligible projects per feature using `config.yml` signals, Insights API data, and test results.
+2. **Manual outreach** — Leverage TSMs and Field Engineers to proactively inform customers about features they're eligible for, ahead of the in-product experience.
+3. **Phase the build** — Break the artifact into phases to ship faster. Ship suggestions per feature rather than waiting to surface all three at once.
+4. **Feedback loop** — Luis to explore an inline feedback mechanism on recommendations so customers can give signal faster through the UI.
+5. **Money team sync** — Luis to sync with the money team on new recommendations insights to inform surfacing and prioritization logic.
 
 ---
 
@@ -109,6 +134,7 @@ Compare current run against the rolling 30-day average prior to feature activati
 | 2026-07-30 | Luis Jiménez | Created prototype and this spec. Shared in `#smarter-testing-private` for review. |
 | 2026-07-30 | Liam Clarke | Feedback: align savings display with existing `rerunFailedTestsJobMetrics` time-saved pattern. Shared component reference. |
 | 2026-07-30 | Luis Jiménez | Decided against sub-row (breaks design system); savings surface moved to SAVINGS column and panel only. Switched inactive feature metrics from per-run to monthly aggregates. |
+| 2026-07-31 | Luis Jiménez | Planning session: added TIA disqualifiers (E2E/Cypress/Playwright), test runner detection caveat, feature adoption logic (single job = adopted), dismissal UX confirmed as required (moved from out of scope), next steps added. |
 
 ---
 
