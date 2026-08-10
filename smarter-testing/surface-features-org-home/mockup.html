@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smarter Testing — Org Home Mockup</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-app:      #0d1117;
+  --bg-sidebar:  #161b22;
+  --bg-panel:    #1c2129;
+  --bg-card:     #21262d;
+  --bg-tooltip:  #2d333b;
+  --bg-slide:    #1c2129;
+  --border:      #30363d;
+  --border-light:#383f47;
+  --text-primary:#e6edf3;
+  --text-secondary:#8b949e;
+  --text-muted:  #6e7681;
+  --accent-blue: #58a6ff;
+  --accent-green:#3fb950;
+  --accent-amber:#d29922;
+  --accent-red:  #f85149;
+  --accent-purple:#bc8cff;
+  --badge-amber-bg: rgba(210,153,34,.15);
+  --badge-amber-border: rgba(210,153,34,.4);
+  --badge-green-bg: rgba(63,185,80,.13);
+  --badge-green-border: rgba(63,185,80,.4);
+  --badge-blue-bg: rgba(88,166,255,.12);
+  --badge-blue-border: rgba(88,166,255,.35);
+  --slide-width: 400px;
+  --font-mono: 'SF Mono', 'Fira Code', monospace;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.app-shell { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 60px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 16px; gap: 8px; flex-shrink: 0;
+}
+.sidebar-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); cursor: pointer; font-size: 16px;
+  transition: background .15s, color .15s;
+}
+.sidebar-icon:hover { background: var(--bg-panel); color: var(--text-primary); }
+.sidebar-icon.active { background: rgba(88,166,255,.15); color: var(--accent-blue); }
+.sidebar-icon-label { font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 2px; line-height: 1.2; }
+.sidebar-item { display: flex; flex-direction: column; align-items: center; width: 100%; padding: 4px 0; }
+.sidebar-item .sidebar-icon { margin: 0; }
+
+/* Topbar */
+.topbar {
+  height: 52px; background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0;
+}
+.topbar-logo { font-size: 14px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.topbar-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
+.topbar-search {
+  flex: 1; max-width: 400px; height: 32px;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px;
+  display: flex; align-items: center; padding: 0 10px; gap: 6px;
+  color: var(--text-muted); font-size: 12px; margin: 0 auto;
+}
+.topbar-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+
+/* Main layout */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; transition: margin-right .25s ease; }
+
+/* Scenario bar */
+.scenario-bar {
+  background: var(--bg-sidebar); border-bottom: 1px solid var(--border);
+  padding: 8px 24px; display: flex; gap: 6px; align-items: center; flex-shrink: 0;
+}
+.scenario-label { font-size: 11px; color: var(--text-muted); margin-right: 4px; }
+.scenario-btn {
+  height: 26px; padding: 0 10px; border: 1px solid var(--border); border-radius: 20px;
+  background: var(--bg-panel); color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all .12s;
+}
+.scenario-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.scenario-btn.active { border-color: var(--accent-blue); background: var(--badge-blue-bg); color: var(--accent-blue); font-weight: 600; }
+
+/* Content area */
+.content { padding: 20px 24px; flex: 1; overflow-x: auto; display: flex; gap: 24px; align-items: flex-start; }
+.content-main { flex: 1; min-width: 0; }
+.content-sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+
+/* Page header */
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.page-title { font-size: 22px; font-weight: 700; }
+.see-all-btn {
+  height: 32px; padding: 0 14px;
+  background: var(--bg-panel); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; font-size: 12px;
+}
+
+/* Project grid */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* Project card */
+.project-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: default;
+  transition: border-color .12s;
+}
+.project-card:hover { border-color: var(--border-light); }
+.project-name { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; word-break: break-word; }
+.project-nav { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.project-nav a { color: var(--accent-blue); font-size: 12px; text-decoration: none; }
+.project-nav a:hover { text-decoration: underline; }
+
+/* ST section */
+.st-section {
+  border-top: 1px solid var(--border);
+  margin: 8px -16px;
+  padding: 0 16px;
+}
+.st-hook {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 0;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity .12s;
+}
+.st-hook:hover { opacity: .85; }
+.st-hook-text { font-size: 12px; font-weight: 600; flex: 1; }
+.st-hook-text.amber { color: var(--accent-amber); }
+.st-hook-text.green { color: var(--accent-green); }
+.st-hook-arrow { font-size: 11px; color: var(--text-muted); }
+.st-dismiss-btn {
+  width: 18px; height: 18px; border-radius: 4px;
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .1s, color .1s;
+}
+.st-dismiss-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+.st-active-count { color: var(--accent-green); font-size: 12px; font-weight: 600; }
+.st-separator { color: var(--text-muted); font-size: 11px; }
+
+/* Last run section */
+.last-run { border-top: 1px solid var(--border); margin: 8px -16px 0; padding: 10px 16px 0; }
+.last-run-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.last-run-value { font-size: 13px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.last-run-value .status-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+.status-icon.success { background: rgba(63,185,80,.2); color: var(--accent-green); }
+.status-icon.failed  { background: rgba(248,81,73,.2); color: var(--accent-red); }
+.triggered-by { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.triggered-branch { font-size: 11px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Right sidebar widgets */
+.widget {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+}
+.widget-title { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.widget-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.widget-value { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.widget-value .delta { font-size: 12px; }
+.delta.down { color: var(--accent-red); }
+.delta.up { color: var(--accent-green); }
+.widget-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; }
+.widget-link { font-size: 12px; color: var(--accent-blue); text-decoration: none; display: block; margin-top: 8px; }
+.widget-link:hover { text-decoration: underline; }
+.plan-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; background: var(--bg-card); border: 1px solid var(--border); font-size: 11px; color: var(--text-secondary); font-weight: 600; letter-spacing: .04em; margin-bottom: 6px; }
+
+/* Slide-out panel */
+.slide-panel {
+  position: fixed; top: 52px; right: 0; bottom: 0; width: var(--slide-width);
+  background: var(--bg-slide); border-left: 1px solid var(--border);
+  overflow-y: auto; transform: translateX(100%); transition: transform .25s ease;
+  z-index: 100; display: flex; flex-direction: column;
+}
+.slide-panel.open { transform: translateX(0); }
+.panel-header {
+  padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0;
+}
+.panel-title { font-size: 14px; font-weight: 700; }
+.panel-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.panel-close {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; transition: background .12s;
+}
+.panel-close:hover { background: var(--bg-card); color: var(--text-primary); }
+.panel-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.panel-footer { padding: 14px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+/* Feature cards */
+.feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.feature-card.active-card { border-color: var(--badge-green-border); background: rgba(63,185,80,.04); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.card-title { font-size: 13px; font-weight: 700; }
+.card-status { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+.card-status.active    { background: var(--badge-green-bg); color: var(--accent-green); border: 1px solid var(--badge-green-border); }
+.card-status.available { background: var(--badge-amber-bg); color: var(--accent-amber); border: 1px solid var(--badge-amber-border); }
+.card-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5; }
+.card-metric {
+  background: var(--bg-panel); border-radius: 6px; padding: 8px 10px;
+  margin-bottom: 10px;
+}
+.metric-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.metric-value { font-size: 14px; font-weight: 700; color: var(--accent-green); margin: 2px 0; }
+.metric-value.amber { color: var(--accent-amber); }
+.metric-note { font-size: 11px; color: var(--text-muted); }
+.card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.card-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border); }
+.card-tag.check { color: var(--accent-green); border-color: var(--badge-green-border); background: var(--badge-green-bg); }
+.card-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn-primary {
+  height: 30px; padding: 0 12px; background: var(--accent-blue); color: #fff;
+  font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; gap: 5px; transition: opacity .15s; white-space: nowrap;
+}
+.btn-primary:hover { opacity: .85; }
+.btn-primary.green-btn { background: #238636; }
+.btn-link {
+  height: 30px; padding: 0 8px; background: none; color: var(--accent-blue);
+  font-size: 12px; font-weight: 500; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+}
+.btn-link:hover { text-decoration: underline; }
+.btn-secondary {
+  height: 30px; padding: 0 12px; background: var(--bg-panel);
+  border: 1px solid var(--border); color: var(--text-primary);
+  font-size: 12px; font-weight: 500; border-radius: 6px; cursor: pointer;
+}
+.btn-dismiss {
+  height: 26px; padding: 0 8px; background: none;
+  border: none; color: var(--text-muted); font-size: 11px;
+  cursor: pointer; display: inline-flex; align-items: center;
+}
+.btn-dismiss:hover { color: var(--text-primary); text-decoration: underline; }
+
+/* Install button states */
+.btn-install {
+  height: 30px; padding: 0 14px; background: var(--accent-blue); color: #fff;
+  font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; transition: opacity .15s, background .15s;
+  white-space: nowrap;
+}
+.btn-install:hover:not(:disabled) { opacity: .85; }
+.btn-install:disabled { cursor: default; opacity: .7; }
+.btn-install.state-creating { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-install.state-success { background: #1a4a1a; border: 1px solid var(--badge-green-border); color: var(--accent-green); cursor: default; }
+.btn-install.state-error { background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.4); color: #f85149; cursor: pointer; }
+
+.install-pr-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--accent-blue); font-size: 12px; font-weight: 500;
+  background: none; border: none; cursor: pointer; padding: 0;
+  text-decoration: none;
+}
+.install-pr-link:hover { text-decoration: underline; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+.restore-link { padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: center; }
+.insights-banner {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.insights-banner-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.insights-banner-text strong { color: var(--text-primary); display: block; margin-bottom: 2px; }
+
+/* Legend */
+.legend {
+  padding: 10px 24px; background: var(--bg-sidebar); border-top: 1px solid var(--border);
+  display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted);
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-item">
+      <div class="sidebar-icon active">⌂</div>
+      <div class="sidebar-icon-label">Home</div>
+    </div>
+    <div class="sidebar-item">
+      <div class="sidebar-icon">⊟</div>
+      <div class="sidebar-icon-label">Pipelines</div>
+    </div>
+    <div class="sidebar-item">
+      <div class="sidebar-icon">⊞</div>
+      <div class="sidebar-icon-label">Projects</div>
+    </div>
+    <div class="sidebar-item">
+      <div class="sidebar-icon">↑</div>
+      <div class="sidebar-icon-label">Deploys</div>
+    </div>
+    <div class="sidebar-item">
+      <div class="sidebar-icon">⌁</div>
+      <div class="sidebar-icon-label">Insights</div>
+    </div>
+    <div class="sidebar-item">
+      <div class="sidebar-icon">⊙</div>
+      <div class="sidebar-icon-label">Runners</div>
+    </div>
+    <div class="sidebar-item" style="margin-top:auto;padding-bottom:16px;">
+      <div class="sidebar-icon">▦</div>
+      <div class="sidebar-icon-label">Chunk</div>
+    </div>
+  </div>
+
+  <div class="main" id="mainContent">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-logo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#58a6ff" stroke-width="2"/><path d="M8 12h8M12 8l4 4-4 4" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        CircleCI <div class="dot"></div>
+      </div>
+      <div class="topbar-search">🔍 Search or go to… <span style="margin-left:auto;font-size:10px;opacity:.5">cmd+/</span></div>
+      <div class="topbar-actions">
+        <div style="color:var(--text-muted);font-size:14px;cursor:pointer">☀</div>
+        <div style="color:var(--text-muted);font-size:14px;cursor:pointer">🔔</div>
+        <div style="color:var(--text-muted);font-size:14px;cursor:pointer">?</div>
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--accent-purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">LU</div>
+      </div>
+    </div>
+
+    <!-- Scenario switcher -->
+    <div class="scenario-bar">
+      <span class="scenario-label">Show scenario:</span>
+      <button class="scenario-btn active" onclick="setScenario('b')" id="btn-b">B — Eligible, not enabled</button>
+      <button class="scenario-btn" onclick="setScenario('c')" id="btn-c">C — Partially active</button>
+      <button class="scenario-btn" onclick="setScenario('d')" id="btn-d">D — All active</button>
+      <button class="scenario-btn" onclick="setScenario('a')" id="btn-a">A — Not eligible</button>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+      <div class="content-main">
+        <div class="page-header">
+          <div class="page-title">Organization Home</div>
+          <button class="see-all-btn">See all projects</button>
+        </div>
+
+        <div class="project-grid" id="projectGrid">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Right sidebar -->
+      <div class="content-sidebar">
+        <div class="widget">
+          <div class="widget-title">⌁ Insights</div>
+          <div class="widget-label">THROUGHPUT</div>
+          <div class="widget-desc" style="font-size:11px;">The average number of workflow runs per day over the last 30 days.</div>
+          <div class="widget-value">5,252 <span class="delta down">↓ 9%</span></div>
+          <a class="widget-link" href="#">Learn more ↗ about improving throughput.</a>
+          <a class="widget-link" href="#">See all insights →</a>
+        </div>
+        <div class="widget">
+          <div class="widget-title">👥 People</div>
+          <div class="widget-label">ACTIVE USERS THIS BILLING PERIOD</div>
+          <div class="widget-value" style="margin-top:4px;">134</div>
+          <a class="widget-link" href="#">Add more teammates →</a>
+        </div>
+        <div class="widget">
+          <div class="widget-title">$ Plan</div>
+          <div class="widget-label">USAGE THIS BILLING PERIOD</div>
+          <div class="plan-chip">CUSTOM PERFORMANCE</div>
+          <div class="widget-desc">circleci shares its plan with 91 other orgs.</div>
+          <div class="widget-label">CREDIT USAGE</div>
+          <div class="widget-value">13,081,845</div>
+          <a class="widget-link" href="#">See more usage data →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span style="color:var(--accent-amber)">⚡</span> Smarter Testing optimization available — click to set up</div>
+      <div class="legend-item"><span style="color:var(--accent-green)">✓</span> Feature active</div>
+      <div class="legend-item">[✕] on the ST row dismisses suggestions for that project</div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide-out panel -->
+<div class="slide-panel" id="slidePanel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title" id="panelTitle">Smarter Testing</div>
+      <div class="panel-subtitle" id="panelSubtitle"></div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+  <div class="panel-footer" id="panelFooter" style="display:none;"></div>
+</div>
+
+<script>
+// ── Project definitions ───────────────────────────────────────────────
+const PROJECTS = [
+  {
+    id: 'web-ui-consolidated',
+    name: 'web-ui-consolidated',
+    eligible: true,
+    lastRun: '3 minutes ago',
+    lastStatus: 'failed',
+    triggeredBy: 'spike/stripe-billing-details-and-receipts'
+  },
+  {
+    id: 'public-api-service',
+    name: 'public-api-service',
+    eligible: true,
+    lastRun: '14 minutes ago',
+    lastStatus: 'success',
+    triggeredBy: 'dm-claude/drop-stale-branches-tag'
+  },
+  {
+    id: 'dbt-data-modeling',
+    name: 'dbt-data-modeling',
+    eligible: false,
+    lastRun: '2 hours ago',
+    lastStatus: 'failed',
+    triggeredBy: 'ae-1011'
+  },
+  {
+    id: 'command-convenience-containers',
+    name: 'command-convenience-containers',
+    eligible: false,
+    lastRun: '3 hours ago',
+    lastStatus: 'failed',
+    triggeredBy: 'calvis/fnds-331-registry-flake'
+  },
+  {
+    id: 'notifications',
+    name: 'notifications',
+    eligible: true,
+    lastRun: '4 hours ago',
+    lastStatus: 'success',
+    triggeredBy: 'NOT-1289/secondary-template-migration'
+  },
+  {
+    id: 'web-ui-service',
+    name: 'web-ui-service',
+    eligible: true,
+    lastRun: '5 hours ago',
+    lastStatus: 'success',
+    triggeredBy: 'renovate/main-update-backplane-go'
+  }
+];
+
+// ── Feature definitions per project ──────────────────────────────────
+const PROJECT_FEATURES = {
+  'web-ui-consolidated': [
+    {
+      key: 'TIA',
+      title: 'Test Impact Analysis',
+      desc: 'Run only the tests affected by your code changes. PRs that touch one module skip the rest of the suite entirely.',
+      metric_available: { label: 'Estimated monthly savings', value: '~15m/month', note: 'Based on ~145 tests/day, ~60% skip rate on average', cls: 'amber' },
+      metric_active: { label: 'This run', value: '83% fewer tests ran', note: '52 of 312 tests · 3m 12s saved vs. 30-day avg', cls: '' },
+      tags: ['Jest ✓', 'parallelism: 4'],
+      cta: 'TIA'
+    },
+    {
+      key: 'DTS',
+      title: 'Dynamic Test Splitting',
+      desc: 'Distribute tests evenly across all 4 parallel nodes so every node finishes at the same time — no idle nodes waiting.',
+      metric_available: { label: 'Estimated monthly savings', value: '~6m/month', note: 'Based on 4 parallel nodes, ~5 runs/day with uneven timing', cls: 'amber' },
+      metric_active: { label: 'This run', value: '1m 08s saved', note: 'All nodes finished within 4s of each other', cls: '' },
+      tags: ['parallelism: 4 ✓'],
+      cta: 'DTS'
+    },
+    {
+      key: 'ARFT',
+      title: 'Auto Rerun Failed Tests',
+      desc: 'Automatically retries failed test atoms. Recovers from flaky tests without rerunning the entire suite.',
+      metric_available: { label: 'Estimated monthly savings', value: '~4m/month', note: 'Based on 23 flaky failures/month avg for this project', cls: 'amber' },
+      metric_active: { label: 'This run', value: '2 flakes recovered', note: '34s saved vs. manual rerun · job succeeded', cls: '' },
+      tags: ['JUnit XML ✓', 'flaky history detected'],
+      cta: 'ARFT'
+    }
+  ],
+  'public-api-service': [
+    {
+      key: 'DTS',
+      title: 'Dynamic Test Splitting',
+      desc: 'Distribute tests evenly across all 6 parallel nodes so every node finishes at the same time.',
+      metric_available: { label: 'Estimated monthly savings', value: '~8m/month', note: 'Based on 6 parallel nodes, ~8 runs/day with uneven timing', cls: 'amber' },
+      metric_active: { label: 'This run', value: '2m 14s saved', note: 'All 6 nodes finished within 6s of each other', cls: '' },
+      tags: ['parallelism: 6 ✓'],
+      cta: 'DTS'
+    }
+  ],
+  'notifications': [
+    {
+      key: 'TIA',
+      title: 'Test Impact Analysis',
+      desc: 'Run only the tests affected by your code changes.',
+      metric_available: { label: 'Estimated monthly savings', value: '~10m/month', note: 'Based on ~90 tests/day, ~55% skip rate on average', cls: 'amber' },
+      metric_active: { label: 'This run', value: '71% fewer tests ran', note: '26 of 91 tests selected · 2m 40s saved', cls: '' },
+      tags: ['RSpec ✓'],
+      cta: 'TIA'
+    },
+    {
+      key: 'ARFT',
+      title: 'Auto Rerun Failed Tests',
+      desc: 'Automatically retries failed test atoms. Recovers from flaky tests without rerunning the entire suite.',
+      metric_available: { label: 'Estimated monthly savings', value: '~3m/month', note: 'Based on 14 flaky failures/month avg for this project', cls: 'amber' },
+      metric_active: { label: 'This run', value: '1 flake recovered', note: '18s saved vs. manual rerun', cls: '' },
+      tags: ['JUnit XML ✓', 'flaky history detected'],
+      cta: 'ARFT'
+    }
+  ],
+  'web-ui-service': [
+    {
+      key: 'TIA',
+      title: 'Test Impact Analysis',
+      desc: 'Run only the tests affected by your code changes.',
+      metric_available: { label: 'Estimated monthly savings', value: '~12m/month', note: 'Based on ~110 tests/day, ~58% skip rate on average', cls: 'amber' },
+      metric_active: { label: 'This run', value: '79% fewer tests ran', note: '23 of 108 tests · 2m 55s saved', cls: '' },
+      tags: ['Jest ✓'],
+      cta: 'TIA'
+    },
+    {
+      key: 'DTS',
+      title: 'Dynamic Test Splitting',
+      desc: 'Distribute tests evenly across 3 parallel nodes.',
+      metric_available: { label: 'Estimated monthly savings', value: '~5m/month', note: 'Based on 3 parallel nodes, ~4 runs/day', cls: 'amber' },
+      metric_active: { label: 'This run', value: '58s saved', note: 'All 3 nodes finished within 3s of each other', cls: '' },
+      tags: ['parallelism: 3 ✓'],
+      cta: 'DTS'
+    }
+  ]
+};
+
+// ── State ─────────────────────────────────────────────────────────────
+let currentScenario = 'b';
+let panelOpen = false;
+let panelProject = null;
+
+// dismissed: Set of "projectId:featureKey" strings
+let dismissed = new Set(JSON.parse(localStorage.getItem('st-org-dismissed') || '[]'));
+
+function saveDismissed() {
+  localStorage.setItem('st-org-dismissed', JSON.stringify([...dismissed]));
+}
+
+function isFeatureDismissed(projectId, featureKey) {
+  return dismissed.has(`${projectId}:${featureKey}`);
+}
+
+function dismissFeature(projectId, featureKey) {
+  dismissed.add(`${projectId}:${featureKey}`);
+  saveDismissed();
+  rerenderCard(projectId);
+  if (panelOpen && panelProject === projectId) renderPanel(projectId);
+}
+
+function restoreDismissed(projectId) {
+  const prefix = `${projectId}:`;
+  for (const key of [...dismissed]) {
+    if (key.startsWith(prefix)) dismissed.delete(key);
+  }
+  saveDismissed();
+  rerenderCard(projectId);
+  if (panelOpen && panelProject === projectId) renderPanel(projectId);
+}
+
+// ── Card state logic ──────────────────────────────────────────────────
+function getCardState(project) {
+  if (!project.eligible || currentScenario === 'a') return 'A';
+  const features = PROJECT_FEATURES[project.id] || [];
+  if (!features.length) return 'A';
+  if (currentScenario === 'd') return 'D';
+  if (currentScenario === 'b') return 'B';
+  // C: first feature active, rest available
+  return 'C';
+}
+
+function getActiveFeatures(projectId) {
+  const features = PROJECT_FEATURES[projectId] || [];
+  if (currentScenario === 'd') return features;
+  if (currentScenario === 'c') return features.slice(0, 1);
+  return [];
+}
+
+function getAvailableFeatures(projectId) {
+  const features = PROJECT_FEATURES[projectId] || [];
+  const activeKeys = new Set(getActiveFeatures(projectId).map(f => f.key));
+  return features.filter(f => !activeKeys.has(f.key) && !isFeatureDismissed(projectId, f.key));
+}
+
+function getUndismissedCount(projectId) {
+  return getAvailableFeatures(projectId).length;
+}
+
+// ── Render the grid ───────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('projectGrid');
+  grid.innerHTML = '';
+  PROJECTS.forEach(p => {
+    grid.appendChild(buildCard(p));
+  });
+}
+
+function buildCard(project) {
+  const card = document.createElement('div');
+  card.className = 'project-card';
+  card.id = `card-${project.id}`;
+
+  const state = getCardState(project);
+  const activeFeatures = getActiveFeatures(project.id);
+  const availableCount = getUndismissedCount(project.id);
+
+  let stSectionHTML = '';
+
+  if (state !== 'A') {
+    let hookHTML = '';
+
+    if (state === 'B') {
+      if (availableCount > 0) {
+        const label = availableCount === 1 ? '1 optimization available' : `${availableCount} optimizations available`;
+        hookHTML = `
+          <div class="st-hook" onclick="openPanel('${project.id}')">
+            <span class="st-hook-text amber">⚡ ${label}</span>
+            <span class="st-hook-arrow">→</span>
+            <button class="st-dismiss-btn" onclick="dismissAllForProject('${project.id}', event)" title="Dismiss">✕</button>
+          </div>`;
+      }
+    } else if (state === 'C') {
+      const activeCount = activeFeatures.length;
+      const activeLabel = activeCount === 1 ? '1 optimization active' : `${activeCount} optimizations active`;
+      if (availableCount > 0) {
+        const moreLabel = availableCount === 1 ? '+1 optimization available' : `+${availableCount} optimizations available`;
+        hookHTML = `
+          <div class="st-hook" onclick="openPanel('${project.id}')">
+            <span class="st-active-count">✓ ${activeLabel}</span>
+            <span class="st-separator"> · </span>
+            <span class="st-hook-text amber">⚡ ${moreLabel}</span>
+            <span class="st-hook-arrow">→</span>
+            <button class="st-dismiss-btn" onclick="dismissAllForProject('${project.id}', event)" title="Dismiss available suggestions">✕</button>
+          </div>`;
+      } else {
+        // all available dismissed — show just active
+        const activeCount2 = activeFeatures.length;
+        const activeLabel2 = activeCount2 === 1 ? '1 optimization active' : `${activeCount2} optimizations active`;
+        hookHTML = `
+          <div class="st-hook" onclick="openPanel('${project.id}')">
+            <span class="st-active-count">✓ ${activeLabel2}</span>
+            <span class="st-hook-arrow">→</span>
+          </div>`;
+      }
+    } else if (state === 'D') {
+      hookHTML = `
+        <div class="st-hook" onclick="openPanel('${project.id}')">
+          <span class="st-hook-text green">✓ Smarter Testing active</span>
+          <span class="st-hook-arrow">→</span>
+        </div>`;
+    }
+
+    if (hookHTML) {
+      stSectionHTML = `<div class="st-section">${hookHTML}</div>`;
+    }
+  }
+
+  const statusIcon = project.lastStatus === 'success'
+    ? `<span class="status-icon success">✓</span>`
+    : `<span class="status-icon failed">✕</span>`;
+
+  card.innerHTML = `
+    <div class="project-name">${project.name}</div>
+    <div class="project-nav">
+      <a href="#">Overview</a>
+      <a href="#">Pipelines</a>
+      <a href="#">Deploys</a>
+    </div>
+    ${stSectionHTML}
+    <div class="last-run">
+      <div class="last-run-label">LAST RUN</div>
+      <div class="last-run-value">${project.lastRun} ${statusIcon}</div>
+      <div class="triggered-by">LAST TRIGGERED BY</div>
+      <div class="triggered-branch">${project.triggeredBy}</div>
+    </div>`;
+
+  return card;
+}
+
+function rerenderCard(projectId) {
+  const project = PROJECTS.find(p => p.id === projectId);
+  if (!project) return;
+  const existing = document.getElementById(`card-${projectId}`);
+  if (!existing) return;
+  const newCard = buildCard(project);
+  existing.replaceWith(newCard);
+}
+
+// Dismiss all available features for a project from the card ✕ button
+function dismissAllForProject(projectId, event) {
+  event.stopPropagation();
+  const features = PROJECT_FEATURES[projectId] || [];
+  const activeKeys = new Set(getActiveFeatures(projectId).map(f => f.key));
+  features.filter(f => !activeKeys.has(f.key)).forEach(f => {
+    dismissed.add(`${projectId}:${f.key}`);
+  });
+  saveDismissed();
+  rerenderCard(projectId);
+  if (panelOpen && panelProject === projectId) {
+    renderPanel(projectId);
+  }
+}
+
+// ── Panel ─────────────────────────────────────────────────────────────
+function openPanel(projectId) {
+  panelProject = projectId;
+  panelOpen = true;
+  document.getElementById('slidePanel').classList.add('open');
+  document.getElementById('mainContent').style.marginRight = '400px';
+  renderPanel(projectId);
+}
+
+function closePanel() {
+  panelOpen = false;
+  panelProject = null;
+  document.getElementById('slidePanel').classList.remove('open');
+  document.getElementById('mainContent').style.marginRight = '0';
+}
+
+function renderPanel(projectId) {
+  const features = PROJECT_FEATURES[projectId] || [];
+  const activeFeatures = getActiveFeatures(projectId);
+  const activeKeys = new Set(activeFeatures.map(f => f.key));
+  const state = getCardState(PROJECTS.find(p => p.id === projectId));
+
+  document.getElementById('panelTitle').textContent = 'Smarter Testing';
+  document.getElementById('panelSubtitle').textContent = projectId;
+
+  const body = document.getElementById('panelBody');
+  const footer = document.getElementById('panelFooter');
+  body.innerHTML = '';
+
+  // Active cards
+  activeFeatures.forEach(f => {
+    body.appendChild(buildFeatureCard(projectId, f, 'active'));
+  });
+
+  // Available cards (undismissed)
+  const availableFeatures = features.filter(f => !activeKeys.has(f.key) && !isFeatureDismissed(projectId, f.key));
+  availableFeatures.forEach(f => {
+    body.appendChild(buildFeatureCard(projectId, f, 'available'));
+  });
+
+  // Dismissed notice
+  const anyDismissed = features.some(f => !activeKeys.has(f.key) && isFeatureDismissed(projectId, f.key));
+
+  if (activeFeatures.length === 0 && availableFeatures.length === 0) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'color:var(--text-muted);font-size:12px;padding:20px 0;text-align:center;line-height:1.8;';
+    msg.textContent = 'All suggestions dismissed for this project.';
+    body.appendChild(msg);
+  }
+
+  if (anyDismissed) {
+    const restoreDiv = document.createElement('div');
+    restoreDiv.className = 'restore-link';
+    restoreDiv.innerHTML = `<button class="btn-link" onclick="restoreDismissed('${projectId}')">↩ Restore dismissed suggestions</button>`;
+    body.appendChild(restoreDiv);
+  }
+
+  // Insights CTA for State D
+  if (state === 'D') {
+    footer.style.display = 'block';
+    footer.innerHTML = `
+      <div class="insights-banner">
+        <div class="insights-banner-text">
+          <strong>View Test Insights</strong>
+          Dig into flaky tests, slowest tests, and historical savings for this project.
+        </div>
+        <button class="btn-primary green-btn" style="flex-shrink:0;" onclick="openInsights('${projectId}')">
+          ⌁ Open Insights
+        </button>
+      </div>`;
+  } else {
+    footer.style.display = 'none';
+  }
+}
+
+function buildFeatureCard(projectId, feature, type) {
+  const card = document.createElement('div');
+  card.className = `feature-card ${type === 'active' ? 'active-card' : ''}`;
+
+  const statusLabel = type === 'active' ? 'Active' : 'Available';
+  const metric = type === 'active' ? feature.metric_active : feature.metric_available;
+
+  const tagsHTML = feature.tags.length
+    ? `<div class="card-tags">${feature.tags.map(t => `<span class="card-tag ${t.includes('✓') ? 'check' : ''}">${t}</span>`).join('')}</div>`
+    : '';
+
+  const installId = `install-${projectId}-${feature.key}`;
+  let actionsHTML = '';
+  if (type === 'available') {
+    actionsHTML = `
+      <div class="card-actions" id="${installId}-actions">
+        <button class="btn-install" id="${installId}" onclick="handleInstall('${projectId}', '${feature.key}', '${installId}')">Install</button>
+        <button class="btn-link" onclick="openDocs()">View docs ↗</button>
+      </div>
+      <div style="margin-top:8px;">
+        <button class="btn-dismiss" onclick="dismissFeature('${projectId}', '${feature.key}')">Not interested</button>
+      </div>`;
+  } else {
+    actionsHTML = `<div class="card-actions"><button class="btn-secondary" onclick="openRunDetails()">View run details ↗</button></div>`;
+  }
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-title">${feature.title}</div>
+      <span class="card-status ${type}">${statusLabel}</span>
+    </div>
+    <div class="card-desc">${feature.desc}</div>
+    <div class="card-metric">
+      <div class="metric-label">${metric.label}</div>
+      <div class="metric-value ${metric.cls}">${metric.value}</div>
+      <div class="metric-note">${metric.note}</div>
+    </div>
+    ${tagsHTML}${actionsHTML}`;
+
+  return card;
+}
+
+// ── Scenario switch ───────────────────────────────────────────────────
+function setScenario(s) {
+  // Reset dismissals when switching scenarios for a cleaner demo
+  dismissed.clear();
+  localStorage.removeItem('st-org-dismissed');
+  currentScenario = s;
+  ['a','b','c','d'].forEach(k =>
+    document.getElementById(`btn-${k}`).classList.toggle('active', k === s)
+  );
+  renderGrid();
+  if (panelOpen && panelProject) renderPanel(panelProject);
+}
+
+// ── Install button handler ────────────────────────────────────────────
+const BRANCH_NAMES = {
+  TIA:  'circleci/setup-test-impact-analysis',
+  DTS:  'circleci/setup-dynamic-test-splitting',
+  ARFT: 'circleci/setup-auto-rerun-failed-tests'
+};
+const FEATURE_LABELS = {
+  TIA: 'Test Impact Analysis', DTS: 'Dynamic Test Splitting', ARFT: 'Auto Rerun Failed Tests'
+};
+
+// Track install states per card: 'idle' | 'creating' | 'success' | 'error'
+const installStates = {};
+
+function handleInstall(projectId, featureKey, installId) {
+  const state = installStates[installId] || 'idle';
+  if (state === 'creating') return;
+  if (state === 'success') return;
+
+  // Transition to creating
+  installStates[installId] = 'creating';
+  const btn = document.getElementById(installId);
+  if (!btn) return;
+  btn.disabled = true;
+  btn.className = 'btn-install state-creating';
+  btn.innerHTML = `<span class="spinner"></span> Creating PR…`;
+
+  // Simulate async backend call (1.8s)
+  setTimeout(() => {
+    // Simulate success 90% of the time in the prototype
+    const success = Math.random() > 0.1;
+    if (success) {
+      installStates[installId] = 'success';
+      const branch = BRANCH_NAMES[featureKey];
+      const actionsDiv = document.getElementById(`${installId}-actions`);
+      if (actionsDiv) {
+        actionsDiv.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button class="btn-install state-success" disabled>✓ PR created</button>
+            <a class="install-pr-link" href="#" onclick="event.preventDefault();alert('[Prototype] Would open PR:\\ngithub.com/${projectId}/pull/42\\nBranch: ${branch}')">
+              View PR →
+            </a>
+          </div>`;
+      }
+    } else {
+      installStates[installId] = 'error';
+      btn.disabled = false;
+      btn.className = 'btn-install state-error';
+      btn.innerHTML = 'Failed — try again';
+      btn.onclick = () => handleInstall(projectId, featureKey, installId);
+    }
+  }, 1800);
+}
+
+function openDocs() {
+  window.open('https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/', '_blank');
+}
+
+function openInsights(projectId) {
+  alert(`[Prototype] Would navigate to Test Insights for ${projectId}\n(e.g. /insights/${projectId}/tests)`);
+}
+
+function openRunDetails() {
+  alert('[Prototype] Would navigate to run details page.');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+renderGrid();
+</script>
+</body>
+</html>
