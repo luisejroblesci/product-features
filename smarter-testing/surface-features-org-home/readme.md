@@ -2,7 +2,7 @@
 
 **Experiment:** `smarter-testing/surface-features-org-home`  
 **Status:** Draft — for eng/PM discussion  
-**Prototype:** _(TBD — see mockup.html)_
+**Prototype:** https://claude.ai/code/artifact/8393c53b-768d-4ba3-be79-30da26e595d5
 
 ---
 
@@ -258,7 +258,8 @@ The "Install" button is idempotent: if a PR already exists for this feature on t
 
 ## References
 
-- [Prototype (mockup.html)](./mockup.html)
+- [Prototype (interactive)](https://claude.ai/code/artifact/8393c53b-768d-4ba3-be79-30da26e595d5)
+- [Prototype source (mockup.html)](./mockup.html)
 - [User flows](./user-flows.md)
 - [Pipelines page spec (companion)](../surface-features-pipeline-page/readme.md)
 - [Getting started with Smarter Testing](https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/)

@@ -301,7 +301,8 @@ If a PR for this feature already exists on the project (open or merged), "Instal
 ## Related Links
 
 - [Spec (readme.md)](./readme.md)
-- [Prototype (mockup.html)](./mockup.html)
+- [Prototype (interactive)](https://claude.ai/code/artifact/8393c53b-768d-4ba3-be79-30da26e595d5)
+- [Prototype source (mockup.html)](./mockup.html)
 - [Pipelines page spec (companion)](../surface-features-pipeline-page/readme.md)
 - [Smarter Testing getting started docs](https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/)
 - [Test Impact Analysis setup](https://circleci.com/docs/guides/test/set-up-test-impact-analysis/)
