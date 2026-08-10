@@ -1,0 +1,305 @@
+# User Flows: Surface Smarter Testing on Org Home
+
+**Experiment:** `smarter-testing/surface-features-org-home`  
+**Status:** Draft — for eng/PM discussion  
+**Target UI:** Org Home page (Organization Home)  
+**Features:** Test Impact Analysis · Dynamic Test Splitting · Auto Rerun Failed Tests
+
+---
+
+## Background
+
+Amplitude data shows the Org Home page is the highest-traffic surface in CircleCI — more visited than the Pipelines page or Project Overview. The Org Home project card grid is where users check their most important projects daily. Surfacing Smarter Testing eligibility here creates a discovery path at the top of the user's daily workflow.
+
+Eligibility is evaluated at the **project level** (not per-run) and cached. The same hook appears on a project's card until the user sets up a feature, dismisses it, or eligibility changes.
+
+---
+
+## Features Overview
+
+| Feature | What it does | Key eligibility signal |
+|---|---|---|
+| **Test Impact Analysis (TIA)** | Runs only tests affected by code changes | Supported framework (Jest, pytest, Go, Vitest, RSpec); single-process tests; not E2E-heavy |
+| **Dynamic Test Splitting (DTS)** | Distributes tests evenly across parallel nodes | `parallelism > 1` in config for any test job |
+| **Auto Rerun Failed Tests (ARFT)** | Retries failed test atoms automatically | `store_test_results` configured; flaky test history present |
+
+---
+
+## Card States
+
+### State A — Not eligible
+No Smarter Testing section. Card is unchanged. Project does not meet eligibility signals for any feature.
+
+---
+
+### State B — Eligible, none active
+
+An amber hook row appears below the nav links on the project card:
+
+```
+⚡ N optimizations available  →  [✕]
+```
+
+- N = number of undismissed eligible features
+- Amber color signals opportunity (not error)
+- `[✕]` button on the right dismisses the section for this project
+- Clicking anywhere on the hook row (except ✕) opens the slide-out panel
+
+If only 1 feature eligible: `⚡ 1 optimization available  →  [✕]`
+
+---
+
+### State C — Partially active
+
+```
+✓ N active  ·  ⚡ +M more available  →  [✕]
+```
+
+- Green `✓ N active` for enabled features
+- Amber `⚡ +M more available` for remaining unenabled features
+- Clicking opens the panel showing a mix of active cards and available cards
+- `[✕]` dismisses the available suggestions for this project (active status remains visible)
+
+---
+
+### State D — All eligible features active
+
+```
+✓ Smarter Testing active  →
+```
+
+- Single green line; no ✕ button
+- Clicking opens the panel showing all active feature cards with per-run metrics
+- Panel footer has "Open Insights" CTA for the project
+
+---
+
+## Primary Flows
+
+---
+
+### Flow 1: Discovery → Setup
+
+**Trigger:** User visits Org Home. Their project is eligible for one or more features (State B or C).
+
+```
+1. User visits Org Home
+   └─ Project card for "web-ui-consolidated" shows:
+      "⚡ 2 optimizations available  →  [✕]"
+
+2. User clicks the hook row
+   └─ Slide-out panel opens from the right
+   └─ Main content shifts left (400px)
+   └─ Panel header: "Smarter Testing  ·  web-ui-consolidated"
+   └─ Panel shows one card per eligible feature:
+      ┌─────────────────────────────────────────┐
+      │ ⚡ Test Impact Analysis  [Available]     │
+      │ Run only tests affected by your changes  │
+      │                                          │
+      │ Est. ~15m/month                          │
+      │ Based on 145 tests/day, ~60% skip rate   │
+      │                                          │
+      │ [Set up with Claude Code]  View docs ↗   │
+      │                       Not interested     │
+      └─────────────────────────────────────────┘
+
+3. User clicks "Set up with Claude Code"
+   └─ Browser fires:
+      claude://open?prompt=<url-encoded setup prompt>
+   └─ Claude Code surfaces (or launches) with pre-populated prompt
+
+   [If Claude Code not installed:]
+   └─ After 2–3s with no response, show fallback:
+      "Claude Code not detected.
+       [Install Claude Code]   [Open docs instead]"
+
+4. User completes setup in Claude Code
+   └─ On next Org Home load, card shows State C or D
+```
+
+---
+
+### Flow 2: Already active → Insights
+
+**Trigger:** User visits Org Home. Their project has all eligible features active (State D).
+
+```
+1. User visits Org Home
+   └─ Project card shows:
+      "✓ Smarter Testing active  →"
+
+2. User clicks the hook row
+   └─ Slide-out panel opens
+   └─ Panel shows all active feature cards with per-run actuals:
+      ┌─────────────────────────────────────────┐
+      │ ✓ Test Impact Analysis  [Active]         │
+      │ Running. Selecting only affected tests.  │
+      │                                          │
+      │ This run:  83% fewer tests ran           │
+      │ 52 of 312 tests · 3m 12s saved           │
+      │                                          │
+      │ [View run details ↗]                     │
+      └─────────────────────────────────────────┘
+
+3. Panel footer shows:
+   "⌁ Open Insights — view flaky tests, slowest tests, and savings history"
+   [Open Insights →]
+
+4. User clicks "Open Insights"
+   └─ Navigates to Test Insights for that project
+      (e.g. /insights/web-ui-consolidated/tests)
+```
+
+---
+
+### Flow 3: Dismiss
+
+**Trigger:** User sees the ST hook on a card and wants to hide it.
+
+#### Sub-flow 3a: Card-level dismiss (entire section)
+
+```
+1. User clicks [✕] on the hook row
+   └─ Smarter Testing section animates out (fade + collapse)
+   └─ Card returns to its default State A appearance
+   └─ Dismissed state stored in localStorage:
+      Key: "st-card-dismissed:web-ui-consolidated"
+
+   [No immediate "restore" link on the card — avoids noise]
+   [Restore available inside the panel if user reopens it]
+```
+
+#### Sub-flow 3b: Per-feature dismiss (inside panel)
+
+```
+1. User opens panel for a project (State B or C)
+2. User clicks "Not interested" under a specific feature card (e.g. DTS)
+   └─ DTS card fades out
+   └─ Remaining available count in panel header updates
+   └─ Hook row on the card updates:
+      Was: "⚡ 2 optimizations available"
+      Now: "⚡ 1 optimization available"
+   └─ Dismissal stored in localStorage:
+      Key: "st-dismissed:web-ui-consolidated:DTS"
+   └─ "↩ Restore dismissed suggestions" link appears in panel body
+
+3. If all available features are dismissed:
+   └─ Panel body shows: "All suggestions dismissed for this project."
+   └─ Hook row on card hides (card appears as State A)
+   └─ "↩ Restore dismissed suggestions" still in panel (accessible by clicking the card… wait)
+   
+   [Note for eng: if section is hidden after all dismissed, how does user
+    access "restore"? Options: keep a muted "..." or gear icon on the card,
+    or only expose restore through a settings/notifications area. TBD.]
+```
+
+---
+
+## Eligibility Logic Detail
+
+Eligibility is evaluated at the **project/repo level** and cached — not recalculated per pageview.
+
+### Test Impact Analysis
+- Supported test framework detected in repo (Jest, pytest, Go test, Vitest, RSpec)
+- Tests run in a single process (not across separate containers/services)
+- `test-suites.yml` not yet configured with `test-impact-analysis: true`
+- **Disqualifier:** Cypress or Playwright detected with tests calling a running application → excluded
+
+### Dynamic Test Splitting
+- `parallelism > 1` found in `.circleci/config.yml` for any test job
+- `test-suites.yml` not yet configured with `dynamic-test-splitting: true`
+- _(Note: distinguish from legacy `circleci tests split` — show "Upgrade from legacy" rather than fresh setup)_
+
+### Auto Rerun Failed Tests
+- `store_test_results` present in config (JUnit XML output confirmed)
+- Flaky test history detected via Test Insights (tests passing and failing on the same commit within a 14-day window)
+- `test-suites.yml` not yet configured with `max-auto-rerun`
+
+---
+
+## Savings Calculation
+
+### Inactive features (estimated monthly)
+Show an estimate based on project activity over the past 30 days:
+
+| Feature | Basis |
+|---|---|
+| TIA | Internal benchmarks or pilot data (e.g. "30–60% fewer tests per PR for projects with >200 tests") |
+| DTS | `avg run duration × imbalance factor based on parallelism count` (formula TBD with data team) |
+| ARFT | Flaky failure frequency from Test Insights × avg rerun time |
+
+### Active features (per-run actuals)
+- Rolling **30-day average** run duration, measured from the day before feature activation
+- Surface as: `Xm Ys saved this run` or `X% fewer tests ran`
+
+---
+
+## CTA: Claude Code Deeplink
+
+Each "Set up with Claude Code" button constructs a `claude://` deeplink:
+
+```
+claude://open?prompt=<url-encoded-prompt>
+```
+
+**Example prompt (TIA, Jest project):**
+```
+I want to set up Test Impact Analysis for my CircleCI project "web-ui-consolidated".
+It's a JavaScript project using Jest. Please follow the steps at
+https://circleci.com/docs/guides/test/set-up-test-impact-analysis/
+and help me configure .circleci/test-suites.yml with test-impact-analysis: true.
+```
+
+### Happy path (Claude Code installed)
+1. User clicks "Set up with Claude Code"
+2. Browser fires `claude://` URI → Claude Code launches or surfaces
+3. Claude Code opens with pre-populated prompt
+4. User follows guided setup in terminal
+
+### Fallback (Claude Code not installed)
+1. Browser attempts `claude://` URI → no response
+2. After 2–3 seconds, fallback UI appears:
+   > "Claude Code not detected."  
+   > `[Install Claude Code]` · `[Open docs instead]`
+3. "Install Claude Code" → `https://claude.ai/code`
+4. "Open docs instead" → Getting Started guide
+
+---
+
+## Edge Cases
+
+| Case | Handling |
+|---|---|
+| Project eligible for only 1 feature | Hook reads `⚡ 1 optimization available  →`. Singular, not plural. |
+| User dismisses all features for a project | Hook section hides (State A appearance). Access to "Restore" TBD — see Flow 3b note. |
+| All projects on Org Home are State A | Page looks identical to today. No ST surface at all. |
+| Project uses legacy `circleci tests split` | DTS suggestion reads "Upgrade from legacy test splitting" rather than treating it as a fresh setup. |
+| Org on unsupported auth (no Test Insights access) | ARFT eligibility falls back to JUnit signal only (no flaky history). Show indicator with reduced confidence. |
+| `test-suites.yml` configured but feature flag off | Show as "Paused" rather than "Set up". CTA changes to "Re-enable". (Requires detecting partial config state — TBD.) |
+| User has 20+ projects on Org Home | All eligible projects show ST section. No cap. Eligible projects in view get the signal; off-screen projects get it when scrolled into view. |
+| Project mid-run when user loads Org Home | Eligibility is project-level, not run-level. ST section shows regardless of run status. |
+
+---
+
+## What We're Not Solving in V1
+
+- Pipelines page surface (separate spec in `surface-features-pipeline-page/`)
+- Per-user server-side persistence of dismissal state (localStorage only)
+- In-depth savings analytics page (link to Test Insights instead)
+- Mobile/responsive layout
+- Org-level or team-level rollout controls for the ST section
+- Legacy Org Home (if any)
+
+---
+
+## Related Links
+
+- [Spec (readme.md)](./readme.md)
+- [Prototype (mockup.html)](./mockup.html)
+- [Pipelines page spec (companion)](../surface-features-pipeline-page/readme.md)
+- [Smarter Testing getting started docs](https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/)
+- [Test Impact Analysis setup](https://circleci.com/docs/guides/test/set-up-test-impact-analysis/)
+- [Dynamic Test Splitting setup](https://circleci.com/docs/guides/test/use-dynamic-test-splitting/)
+- [Auto Rerun Failed Tests setup](https://circleci.com/docs/guides/test/auto-rerun-failed-tests/)
+- [Amplitude dashboard](https://app.amplitude.com/analytics/circleci/dashboard/fz92hq7s)
+- Slack: `#smarter-testing-private` · `#smarter-testing`
