@@ -52,11 +52,11 @@ If only 1 feature eligible: `⚡ 1 optimization available  →  [✕]`
 ### State C — Partially active
 
 ```
-✓ N active  ·  ⚡ +M more available  →  [✕]
+✓ N optimization(s) active  ·  ⚡ +M optimization(s) available  →  [✕]
 ```
 
-- Green `✓ N active` for enabled features
-- Amber `⚡ +M more available` for remaining unenabled features
+- Green `✓ N optimization(s) active` for enabled features
+- Amber `⚡ +M optimization(s) available` for remaining unenabled features
 - Clicking opens the panel showing a mix of active cards and available cards
 - `[✕]` dismisses the available suggestions for this project (active status remains visible)
 
@@ -78,7 +78,7 @@ If only 1 feature eligible: `⚡ 1 optimization available  →  [✕]`
 
 ---
 
-### Flow 1: Discovery → Setup
+### Flow 1: Discovery → Install
 
 **Trigger:** User visits Org Home. Their project is eligible for one or more features (State B or C).
 
@@ -99,22 +99,29 @@ If only 1 feature eligible: `⚡ 1 optimization available  →  [✕]`
       │ Est. ~15m/month                          │
       │ Based on 145 tests/day, ~60% skip rate   │
       │                                          │
-      │ [Set up with Claude Code]  View docs ↗   │
+      │ [Install]   View docs ↗                  │
       │                       Not interested     │
       └─────────────────────────────────────────┘
 
-3. User clicks "Set up with Claude Code"
-   └─ Browser fires:
-      claude://open?prompt=<url-encoded setup prompt>
-   └─ Claude Code surfaces (or launches) with pre-populated prompt
+3. User clicks "Install"
+   └─ Button transitions to "Creating PR…" (spinner, disabled)
+   └─ CircleCI backend:
+        a. Creates branch: circleci/setup-test-impact-analysis
+        b. Commits .circleci/test-suites.yml with TIA config pre-filled
+           (framework: jest, detected from project config)
+        c. Opens PR against the project's default branch
 
-   [If Claude Code not installed:]
-   └─ After 2–3s with no response, show fallback:
-      "Claude Code not detected.
-       [Install Claude Code]   [Open docs instead]"
+4. On success:
+   └─ Button transitions to: "✓ PR created  View PR →"
+   └─ "View PR →" opens the PR on GitHub/GitLab/Bitbucket in a new tab
 
-4. User completes setup in Claude Code
+5. Customer reviews and merges the PR
+   └─ On next pipeline run, TIA is active
    └─ On next Org Home load, card shows State C or D
+
+[On error:]
+   └─ Button transitions to: "Failed — try again"
+   └─ Secondary link: "View docs ↗" as a manual fallback
 ```
 
 ---
@@ -179,6 +186,7 @@ If only 1 feature eligible: `⚡ 1 optimization available  →  [✕]`
    └─ Hook row on the card updates:
       Was: "⚡ 2 optimizations available"
       Now: "⚡ 1 optimization available"
+      (State C would read: "✓ 1 optimization active · ⚡ +1 optimization available")
    └─ Dismissal stored in localStorage:
       Key: "st-dismissed:web-ui-consolidated:DTS"
    └─ "↩ Restore dismissed suggestions" link appears in panel body
@@ -234,35 +242,33 @@ Show an estimate based on project activity over the past 30 days:
 
 ---
 
-## CTA: Claude Code Deeplink
+## CTA: Install Button
 
-Each "Set up with Claude Code" button constructs a `claude://` deeplink:
+The "Install" button on each available-feature card triggers CircleCI's backend to create a branch and PR on the project's VCS repo, with the feature fully configured and ready for the customer to review.
 
-```
-claude://open?prompt=<url-encoded-prompt>
-```
+### What CircleCI creates
 
-**Example prompt (TIA, Jest project):**
-```
-I want to set up Test Impact Analysis for my CircleCI project "web-ui-consolidated".
-It's a JavaScript project using Jest. Please follow the steps at
-https://circleci.com/docs/guides/test/set-up-test-impact-analysis/
-and help me configure .circleci/test-suites.yml with test-impact-analysis: true.
-```
+**Branch name:** `circleci/setup-<feature-slug>`
+- TIA: `circleci/setup-test-impact-analysis`
+- DTS: `circleci/setup-dynamic-test-splitting`
+- ARFT: `circleci/setup-auto-rerun-failed-tests`
 
-### Happy path (Claude Code installed)
-1. User clicks "Set up with Claude Code"
-2. Browser fires `claude://` URI → Claude Code launches or surfaces
-3. Claude Code opens with pre-populated prompt
-4. User follows guided setup in terminal
+**Committed file:** `.circleci/test-suites.yml` — created or updated with the feature block pre-filled using detected project signals (framework, parallelism value, etc.).
 
-### Fallback (Claude Code not installed)
-1. Browser attempts `claude://` URI → no response
-2. After 2–3 seconds, fallback UI appears:
-   > "Claude Code not detected."  
-   > `[Install Claude Code]` · `[Open docs instead]`
-3. "Install Claude Code" → `https://claude.ai/code`
-4. "Open docs instead" → Getting Started guide
+**PR description:** Short plain-English explanation of the change + link to the Smarter Testing docs for the feature.
+
+### Button states
+
+| State | Label | Behavior |
+|---|---|---|
+| Default | `Install` | Clickable |
+| In-progress | `Creating PR…` | Spinner; button disabled |
+| Success | `✓ PR created  View PR →` | Opens VCS PR in a new tab |
+| Already exists | `View existing PR →` | Links to the open or merged PR |
+| Error | `Failed — try again` | Retryable; "View docs ↗" shown as fallback |
+
+### Idempotency
+If a PR for this feature already exists on the project (open or merged), "Install" links to the existing PR rather than creating a duplicate.
 
 ---
 
@@ -270,12 +276,12 @@ and help me configure .circleci/test-suites.yml with test-impact-analysis: true.
 
 | Case | Handling |
 |---|---|
-| Project eligible for only 1 feature | Hook reads `⚡ 1 optimization available  →`. Singular, not plural. |
+| Project eligible for only 1 feature | Hook reads `⚡ 1 optimization available  →`. Singular form. |
 | User dismisses all features for a project | Hook section hides (State A appearance). Access to "Restore" TBD — see Flow 3b note. |
 | All projects on Org Home are State A | Page looks identical to today. No ST surface at all. |
 | Project uses legacy `circleci tests split` | DTS suggestion reads "Upgrade from legacy test splitting" rather than treating it as a fresh setup. |
 | Org on unsupported auth (no Test Insights access) | ARFT eligibility falls back to JUnit signal only (no flaky history). Show indicator with reduced confidence. |
-| `test-suites.yml` configured but feature flag off | Show as "Paused" rather than "Set up". CTA changes to "Re-enable". (Requires detecting partial config state — TBD.) |
+| `test-suites.yml` configured but feature flag off | Show as "Paused" rather than "Available". Install button changes to "Re-enable". (Requires detecting partial config state — TBD.) |
 | User has 20+ projects on Org Home | All eligible projects show ST section. No cap. Eligible projects in view get the signal; off-screen projects get it when scrolled into view. |
 | Project mid-run when user loads Org Home | Eligibility is project-level, not run-level. ST section shows regardless of run status. |
 

@@ -97,14 +97,14 @@ A Smarter Testing section appears below the nav links:
 │ web-ui-consolidated                          │
 │ Overview  Pipelines  Deploys                 │
 ├──────────────────────────────────────────────┤
-│ ✓ 1 active  ·  ⚡ +2 more available  →   [✕] │
+│ ✓ 1 optimization active  ·  ⚡ +2 optimizations available  →  [✕] │
 ├──────────────────────────────────────────────┤
 │ LAST RUN    4 minutes ago  ✕                 │
 └──────────────────────────────────────────────┘
 ```
 
-- Green `✓ N active` count for enabled features
-- Amber `⚡ +N more available` count for remaining eligible features
+- Green `✓ N optimization(s) active` count for enabled features
+- Amber `⚡ +N optimization(s) available` count for remaining eligible features
 - Both click to open the panel
 
 ---
@@ -132,7 +132,7 @@ A Smarter Testing section appears below the nav links:
 The panel is identical in structure and content to the Pipelines page spec. See [`surface-features-pipeline-page/user-flows.md`](../surface-features-pipeline-page/user-flows.md) for full panel content specification.
 
 **Summary:**
-- **Available feature card:** feature name, description, estimated monthly savings (amber), tech-stack tags, "Set up with Claude Code" button (deeplink), "View docs" link, "Not interested" dismiss option
+- **Available feature card:** feature name, description, estimated monthly savings (amber), tech-stack tags, "Install" button (creates branch + PR), "View docs" link, "Not interested" dismiss option
 - **Active feature card:** feature name, per-run actuals (green), "View run details" link
 - **State D footer:** "Open Insights" CTA linking to Test Insights for the project
 - **After dismissal:** "Restore dismissed suggestions" link appears in panel body
@@ -189,6 +189,7 @@ Identical to the Pipelines page spec:
 | Per-project dismiss (not per-feature from the card) | Card-level dismiss is one-click; feature-level dismiss is available inside the panel for finer control. |
 | All eligible projects shown (no cap) | Org Home already limits visible projects via the pinned/recent list. Capping within that would hide relevant signals. |
 | No savings number in the hook | The single-line hook stays scannable. Savings details live in the panel to reward curiosity. |
+| "Install" button over Claude Code deeplink | CircleCI already has the infrastructure to onboard a project to each feature. An "Install" button that creates a branch + PR removes the need for any local tooling (Claude Code CLI, terminal access) and puts the implementation directly in a PR the customer can review and merge at their own pace. |
 
 ---
 
@@ -204,14 +205,35 @@ Identical to the Pipelines page spec:
 
 ---
 
+## Install Flow
+
+When a user clicks "Install" on a feature card in the panel, CircleCI's backend:
+
+1. Creates a new branch on the project's VCS repo (e.g. `circleci/setup-test-impact-analysis`)
+2. Commits the necessary config changes (`.circleci/test-suites.yml` with the feature enabled and the detected settings pre-filled)
+3. Opens a PR against the project's default branch with a description explaining the change
+
+The button transitions through states:
+- **Default:** `Install`
+- **In-progress:** `Creating PR…` (spinner, button disabled)
+- **Success:** `✓ PR created  View PR →` (link to the PR on GitHub/GitLab/Bitbucket)
+- **Error:** `Failed — try again` (with a "View docs" fallback link)
+
+The "Install" button is idempotent: if a PR already exists for this feature on this project, clicking again links to the existing PR instead of creating a duplicate.
+
+---
+
 ## Open Questions
 
-1. **Eligibility data API** — Which project-level signals (framework, parallelism, JUnit, flaky history) are queryable from the Org Home backend? This drives which cards show the ST section. Confirm with eng.
-2. **`claude://` URI scheme** — Does it exist? Fallback if Claude Code is not installed? (Shared open question with Pipelines page spec — confirm with `#project-code-factory`.)
-3. **Baseline for savings actuals** — Is the pre-activation 30-day average run duration accessible in the product backend? Required for showing per-run savings on active-feature cards.
-4. **Analytics** — Should clicking the hook or the CTA fire an Amplitude event? Proposed: `smarter_testing_cta_clicked` with properties `feature`, `source: org_home`, `project`.
-5. **Cross-browser fallback for `claude://`** — The 2–3s timeout heuristic is imprecise. Confirm approach with eng.
-6. **Org Home pagination** — If a user has many projects and scrolls, do eligible projects outside the initial viewport still receive the ST section? (Likely yes — same render logic — but confirm with eng on lazy loading.)
+1. **Eligibility data API** — Which project-level signals (framework, parallelism, JUnit, flaky history) are queryable from the Org Home backend? Confirm with eng.
+2. **VCS write permissions** — Does CircleCI already have write access (branch + PR creation) scoped to every connected repo, or does this require re-requesting OAuth scopes for some users? Confirm with the VCS integrations team.
+3. **PR content generation** — How does the backend know what to put in `test-suites.yml`? It needs the detected framework, parallelism value, and any existing config. Confirm what data is available at install-click time.
+4. **Branch naming and PR template** — Proposed branch: `circleci/setup-<feature-slug>`. PR description: short explanation of what the change does + link to docs. Define the template.
+5. **Idempotency** — If the user clicks "Install" a second time (or the PR was closed without merging), what happens? Create a new PR, reopen the old one, or link to the closed PR?
+6. **Post-merge activation** — After the customer merges the PR, does the feature become active immediately on the next pipeline run, or is there additional setup required?
+7. **Baseline for savings actuals** — Is the pre-activation 30-day average run duration accessible in the product backend for showing per-run savings on active-feature cards?
+8. **Analytics** — Should clicking "Install" fire an Amplitude event? Proposed: `smarter_testing_install_clicked` with properties `feature`, `source: org_home`, `project`. Also track PR-created and PR-merged events for funnel analysis.
+9. **Org Home pagination** — Eligible projects outside the initial viewport: confirm lazy-loading behavior with eng.
 
 ---
 
@@ -230,6 +252,7 @@ Identical to the Pipelines page spec:
 | Date | Who | Change |
 |---|---|---|
 | 2026-08-10 | Luis Jiménez | Created spec and prototype for Org Home surface. Amplitude data points to Org Home as highest-traffic page. |
+| 2026-08-10 | Luis Jiménez | Replaced "Set up with Claude Code" CTA with "Install" button (creates branch + PR). Removes CLI dependency; uses existing CircleCI onboarding infrastructure. |
 
 ---
 

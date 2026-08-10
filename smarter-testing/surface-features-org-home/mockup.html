@@ -256,12 +256,30 @@ body {
   cursor: pointer; display: inline-flex; align-items: center;
 }
 .btn-dismiss:hover { color: var(--text-primary); text-decoration: underline; }
-.callout {
-  border: 1px solid rgba(210,153,34,.35); background: rgba(210,153,34,.06);
-  border-radius: 6px; padding: 10px 12px; font-size: 11px;
-  color: var(--text-secondary); line-height: 1.6; margin-top: 10px;
+
+/* Install button states */
+.btn-install {
+  height: 30px; padding: 0 14px; background: var(--accent-blue); color: #fff;
+  font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; transition: opacity .15s, background .15s;
+  white-space: nowrap;
 }
-.callout strong { color: var(--accent-amber); }
+.btn-install:hover:not(:disabled) { opacity: .85; }
+.btn-install:disabled { cursor: default; opacity: .7; }
+.btn-install.state-creating { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-install.state-success { background: #1a4a1a; border: 1px solid var(--badge-green-border); color: var(--accent-green); cursor: default; }
+.btn-install.state-error { background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.4); color: #f85149; cursor: pointer; }
+
+.install-pr-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--accent-blue); font-size: 12px; font-weight: 500;
+  background: none; border: none; cursor: pointer; padding: 0;
+  text-decoration: none;
+}
+.install-pr-link:hover { text-decoration: underline; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
 .restore-link { padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: center; }
 .insights-banner {
   background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
@@ -633,21 +651,24 @@ function buildCard(project) {
       }
     } else if (state === 'C') {
       const activeCount = activeFeatures.length;
-      const activeLabel = activeCount === 1 ? '1 active' : `${activeCount} active`;
+      const activeLabel = activeCount === 1 ? '1 optimization active' : `${activeCount} optimizations active`;
       if (availableCount > 0) {
+        const moreLabel = availableCount === 1 ? '+1 optimization available' : `+${availableCount} optimizations available`;
         hookHTML = `
           <div class="st-hook" onclick="openPanel('${project.id}')">
             <span class="st-active-count">✓ ${activeLabel}</span>
             <span class="st-separator"> · </span>
-            <span class="st-hook-text amber">⚡ +${availableCount} more available</span>
+            <span class="st-hook-text amber">⚡ ${moreLabel}</span>
             <span class="st-hook-arrow">→</span>
             <button class="st-dismiss-btn" onclick="dismissAllForProject('${project.id}', event)" title="Dismiss available suggestions">✕</button>
           </div>`;
       } else {
         // all available dismissed — show just active
+        const activeCount2 = activeFeatures.length;
+        const activeLabel2 = activeCount2 === 1 ? '1 optimization active' : `${activeCount2} optimizations active`;
         hookHTML = `
           <div class="st-hook" onclick="openPanel('${project.id}')">
-            <span class="st-active-count">✓ ${activeLabel}</span>
+            <span class="st-active-count">✓ ${activeLabel2}</span>
             <span class="st-hook-arrow">→</span>
           </div>`;
       }
@@ -796,15 +817,13 @@ function buildFeatureCard(projectId, feature, type) {
     ? `<div class="card-tags">${feature.tags.map(t => `<span class="card-tag ${t.includes('✓') ? 'check' : ''}">${t}</span>`).join('')}</div>`
     : '';
 
+  const installId = `install-${projectId}-${feature.key}`;
   let actionsHTML = '';
   if (type === 'available') {
     actionsHTML = `
-      <div class="card-actions">
-        <button class="btn-primary" onclick="handleCTA('${projectId}', '${feature.cta}')">⌨ Set up with Claude Code</button>
+      <div class="card-actions" id="${installId}-actions">
+        <button class="btn-install" id="${installId}" onclick="handleInstall('${projectId}', '${feature.key}', '${installId}')">Install</button>
         <button class="btn-link" onclick="openDocs()">View docs ↗</button>
-      </div>
-      <div class="callout">
-        <strong>⚠ Open question:</strong> "Set up with Claude Code" will attempt a <code>claude://</code> deeplink. Requires CLI installed. Fallback behavior TBD with eng.
       </div>
       <div style="margin-top:8px;">
         <button class="btn-dismiss" onclick="dismissFeature('${projectId}', '${feature.key}')">Not interested</button>
@@ -842,16 +861,57 @@ function setScenario(s) {
   if (panelOpen && panelProject) renderPanel(panelProject);
 }
 
-// ── CTA handlers ──────────────────────────────────────────────────────
-const PROMPTS = {
-  TIA: (proj) => `I want to set up Test Impact Analysis for my CircleCI project "${proj}". Please follow the steps at https://circleci.com/docs/guides/test/set-up-test-impact-analysis/ and configure .circleci/test-suites.yml with test-impact-analysis: true.`,
-  DTS: (proj) => `I want to set up Dynamic Test Splitting for my CircleCI project "${proj}". Please follow https://circleci.com/docs/guides/test/use-dynamic-test-splitting/ and configure .circleci/test-suites.yml.`,
-  ARFT: (proj) => `I want to set up Auto Rerun Failed Tests for my CircleCI project "${proj}". Please follow https://circleci.com/docs/guides/test/auto-rerun-failed-tests/ and configure max-auto-rerun in .circleci/test-suites.yml.`
+// ── Install button handler ────────────────────────────────────────────
+const BRANCH_NAMES = {
+  TIA:  'circleci/setup-test-impact-analysis',
+  DTS:  'circleci/setup-dynamic-test-splitting',
+  ARFT: 'circleci/setup-auto-rerun-failed-tests'
+};
+const FEATURE_LABELS = {
+  TIA: 'Test Impact Analysis', DTS: 'Dynamic Test Splitting', ARFT: 'Auto Rerun Failed Tests'
 };
 
-function handleCTA(projectId, feature) {
-  const prompt = PROMPTS[feature](projectId);
-  alert(`[Prototype] Would open deeplink:\n\nclaude://open?prompt=${encodeURIComponent(prompt)}\n\nFallback: show install prompt if Claude Code not detected (2–3s timeout).`);
+// Track install states per card: 'idle' | 'creating' | 'success' | 'error'
+const installStates = {};
+
+function handleInstall(projectId, featureKey, installId) {
+  const state = installStates[installId] || 'idle';
+  if (state === 'creating') return;
+  if (state === 'success') return;
+
+  // Transition to creating
+  installStates[installId] = 'creating';
+  const btn = document.getElementById(installId);
+  if (!btn) return;
+  btn.disabled = true;
+  btn.className = 'btn-install state-creating';
+  btn.innerHTML = `<span class="spinner"></span> Creating PR…`;
+
+  // Simulate async backend call (1.8s)
+  setTimeout(() => {
+    // Simulate success 90% of the time in the prototype
+    const success = Math.random() > 0.1;
+    if (success) {
+      installStates[installId] = 'success';
+      const branch = BRANCH_NAMES[featureKey];
+      const actionsDiv = document.getElementById(`${installId}-actions`);
+      if (actionsDiv) {
+        actionsDiv.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button class="btn-install state-success" disabled>✓ PR created</button>
+            <a class="install-pr-link" href="#" onclick="event.preventDefault();alert('[Prototype] Would open PR:\\ngithub.com/${projectId}/pull/42\\nBranch: ${branch}')">
+              View PR →
+            </a>
+          </div>`;
+      }
+    } else {
+      installStates[installId] = 'error';
+      btn.disabled = false;
+      btn.className = 'btn-install state-error';
+      btn.innerHTML = 'Failed — try again';
+      btn.onclick = () => handleInstall(projectId, featureKey, installId);
+    }
+  }, 1800);
 }
 
 function openDocs() {
