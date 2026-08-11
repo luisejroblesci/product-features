@@ -106,7 +106,7 @@ If only 1 feature eligible: `⚡ 1 optimization available  →  [✕]`
 3. User clicks "Install"
    └─ Button transitions to "Creating PR…" (spinner, disabled)
    └─ CircleCI backend:
-        a. Creates branch: circleci/setup-test-impact-analysis
+        a. Creates branch: test-impact-analysis-installation
         b. Commits .circleci/test-suites.yml with TIA config pre-filled
            (framework: jest, detected from project config)
         c. Opens PR against the project's default branch
@@ -248,10 +248,10 @@ The "Install" button on each available-feature card triggers CircleCI's backend 
 
 ### What CircleCI creates
 
-**Branch name:** `circleci/setup-<feature-slug>`
-- TIA: `circleci/setup-test-impact-analysis`
-- DTS: `circleci/setup-dynamic-test-splitting`
-- ARFT: `circleci/setup-auto-rerun-failed-tests`
+**Branch name:** `<feature-name>-installation`
+- TIA: `test-impact-analysis-installation`
+- DTS: `dynamic-test-splitting-installation`
+- ARFT: `auto-rerun-failed-tests-installation`
 
 **Committed file:** `.circleci/test-suites.yml` — created or updated with the feature block pre-filled using detected project signals (framework, parallelism value, etc.).
 
