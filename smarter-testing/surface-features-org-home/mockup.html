@@ -296,6 +296,17 @@ body {
 .copy-btn:hover { background: var(--border); color: var(--text-primary); }
 .copy-btn svg { width: 12px; height: 12px; }
 
+.checkout-cmd { margin-top: 10px; }
+.checkout-label { display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; letter-spacing: .3px; text-transform: uppercase; }
+.checkout-code {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg-app); border: 1px solid var(--border);
+  border-radius: 5px; padding: 5px 8px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);
+  max-width: 100%;
+}
+.checkout-code code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
 .restore-link { padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: center; }
@@ -844,7 +855,7 @@ function buildFeatureCard(projectId, feature, type) {
         <button class="btn-link" onclick="openDocs()">View docs ↗</button>
       </div>
       <div style="margin-top:8px;">
-        <button class="btn-dismiss" onclick="dismissFeature('${projectId}', '${feature.key}')">Not interested</button>
+        <button class="btn-dismiss" id="${installId}-dismiss" onclick="dismissFeature('${projectId}', '${feature.key}')">Not interested</button>
       </div>`;
   } else {
     actionsHTML = `<div class="card-actions"><button class="btn-secondary" onclick="openRunDetails()">View run details ↗</button></div>`;
@@ -904,6 +915,8 @@ function handleInstall(projectId, featureKey, installId) {
   btn.disabled = true;
   btn.className = 'btn-install state-creating';
   btn.innerHTML = `<span class="spinner"></span> Creating PR…`;
+  const dismissBtn = document.getElementById(`${installId}-dismiss`);
+  if (dismissBtn) { dismissBtn.disabled = true; dismissBtn.style.opacity = '0.3'; dismissBtn.style.cursor = 'default'; dismissBtn.style.pointerEvents = 'none'; }
 
   // Simulate async backend call (1.8s)
   setTimeout(() => {
@@ -923,12 +936,24 @@ function handleInstall(projectId, featureKey, installId) {
           </div>
           <div class="branch-chip">
             <span class="branch-chip-name">${branch}</span>
-            <button class="copy-btn" onclick="copyBranch('${branch}', this)" title="Copy branch name">
+            <button class="copy-btn" onclick="copyText('${branch}', this)" title="Copy branch name">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                 <rect x="5" y="5" width="9" height="9" rx="1.5"/>
                 <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/>
               </svg>
             </button>
+          </div>
+          <div class="checkout-cmd">
+            <span class="checkout-label">Pull branch with installation</span>
+            <div class="checkout-code">
+              <code>git fetch origin && git checkout ${branch}</code>
+              <button class="copy-btn" onclick="copyText('git fetch origin && git checkout ${branch}', this)" title="Copy command">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="5" y="5" width="9" height="9" rx="1.5"/>
+                  <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/>
+                </svg>
+              </button>
+            </div>
           </div>`;
       }
     } else {
@@ -941,8 +966,8 @@ function handleInstall(projectId, featureKey, installId) {
   }, 1800);
 }
 
-function copyBranch(branch, btn) {
-  navigator.clipboard.writeText(branch).then(() => {
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
     const orig = btn.innerHTML;
     btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     btn.style.color = 'var(--accent-green)';
