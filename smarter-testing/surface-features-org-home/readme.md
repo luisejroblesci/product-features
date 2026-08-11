@@ -209,7 +209,7 @@ Identical to the Pipelines page spec:
 
 When a user clicks "Install" on a feature card in the panel, CircleCI's backend:
 
-1. Creates a new branch on the project's VCS repo (e.g. `circleci/setup-test-impact-analysis`)
+1. Creates a new branch on the project's VCS repo (e.g. `test-impact-analysis-installation`)
 2. Commits the necessary config changes (`.circleci/test-suites.yml` with the feature enabled and the detected settings pre-filled)
 3. Opens a PR against the project's default branch with a description explaining the change
 
@@ -228,7 +228,7 @@ The "Install" button is idempotent: if a PR already exists for this feature on t
 1. **Eligibility data API** — Which project-level signals (framework, parallelism, JUnit, flaky history) are queryable from the Org Home backend? Confirm with eng.
 2. **VCS write permissions** — Does CircleCI already have write access (branch + PR creation) scoped to every connected repo, or does this require re-requesting OAuth scopes for some users? Confirm with the VCS integrations team.
 3. **PR content generation** — How does the backend know what to put in `test-suites.yml`? It needs the detected framework, parallelism value, and any existing config. Confirm what data is available at install-click time.
-4. **Branch naming and PR template** — Proposed branch: `circleci/setup-<feature-slug>`. PR description: short explanation of what the change does + link to docs. Define the template.
+4. **Branch naming and PR template** — Proposed branch: `<feature-name>-installation` (e.g. `test-impact-analysis-installation`, `dynamic-test-splitting-installation`, `auto-rerun-failed-tests-installation`). PR description: short explanation of what the change does + link to docs. Define the template.
 5. **Idempotency** — If the user clicks "Install" a second time (or the PR was closed without merging), what happens? Create a new PR, reopen the old one, or link to the closed PR?
 6. **Post-merge activation** — After the customer merges the PR, does the feature become active immediately on the next pipeline run, or is there additional setup required?
 7. **Baseline for savings actuals** — Is the pre-activation 30-day average run duration accessible in the product backend for showing per-run savings on active-feature cards?
