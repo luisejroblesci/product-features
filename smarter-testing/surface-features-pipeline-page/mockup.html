@@ -241,12 +241,18 @@ body {
   border: 1px solid var(--border); color: var(--text-primary);
   font-size: 12px; font-weight: 500; border-radius: 6px; cursor: pointer;
 }
-.callout {
-  border: 1px solid rgba(210,153,34,.35); background: rgba(210,153,34,.06);
-  border-radius: 6px; padding: 10px 12px; font-size: 11px;
-  color: var(--text-secondary); line-height: 1.6; margin-top: 10px;
+/* Install button states */
+.btn-install {
+  height: 30px; padding: 0 14px; background: var(--accent-blue); color: #fff;
+  font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; transition: opacity .15s, background .15s;
+  white-space: nowrap;
 }
-.callout strong { color: var(--accent-amber); }
+.btn-install:hover:not(:disabled) { opacity: .85; }
+.btn-install:disabled { cursor: default; opacity: .7; }
+.btn-install.state-creating { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-install.state-success { background: #1a4a1a; border: 1px solid var(--badge-green-border); color: var(--accent-green); cursor: default; }
+.btn-install.state-error { background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.4); color: #f85149; cursor: pointer; }
 
 /* ── Insights CTA banner ── */
 .insights-banner {
@@ -857,11 +863,8 @@ function renderPanel(scenario) {
     if (c.cta) {
       actionsHTML = `
         <div class="card-actions">
-          <button class="btn-primary" onclick="handleCTA('${c.cta}')">⌨ Set up with Claude Code</button>
+          <button class="btn-install" onclick="openOnboardingWizard('${c.cta}')">Set up Smarter Testing</button>
           <button class="btn-link" onclick="openGettingStarted()">View docs ↗</button>
-        </div>
-        <div class="callout">
-          <strong>⚠ Open question:</strong> "Set up with Claude Code" will attempt a <code>claude://</code> deeplink. Requires CLI installed. Fallback behavior TBD with eng.
         </div>
         <div style="margin-top:8px;">
           <button class="btn-dismiss" onclick="dismissFeature('${c.key}')">Not interested</button>
@@ -945,13 +948,10 @@ function setScenario(s) {
 }
 
 // ── CTA handlers ──────────────────────────────────────────────────────
-function handleCTA(feature) {
-  const prompts = {
-    TIA:  'I want to set up Test Impact Analysis for my CircleCI project web-ui-consolidated. It uses Jest. Please follow https://circleci.com/docs/guides/test/set-up-test-impact-analysis/ and configure .circleci/test-suites.yml.',
-    DTS:  'I want to set up Dynamic Test Splitting for my CircleCI project web-ui-consolidated. It runs with parallelism: 4. Please follow https://circleci.com/docs/guides/test/use-dynamic-test-splitting/ and configure .circleci/test-suites.yml.',
-    ARFT: 'I want to set up Auto Rerun Failed Tests for my CircleCI project web-ui-consolidated. Please follow https://circleci.com/docs/guides/test/auto-rerun-failed-tests/ and configure max-auto-rerun in .circleci/test-suites.yml.'
-  };
-  alert(`[Prototype] Would open deeplink:\n\nclaude://open?prompt=${encodeURIComponent(prompts[feature])}\n\nFallback: show install prompt if Claude Code not detected.`);
+function openOnboardingWizard(feature) {
+  // Prototype: opens the onboarding wizard in a new tab
+  // Production: opens the wizard modal inline, passing feature + project context
+  window.open('../onboarding/mockup.html?feature=' + feature, '_blank');
 }
 
 function openGettingStarted() {
