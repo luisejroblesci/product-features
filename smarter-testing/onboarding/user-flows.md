@@ -2,6 +2,35 @@
 
 ---
 
+## Local onboarding flow
+
+```mermaid
+flowchart TD
+    A([1. Org Home\neligibility signal visible]) --> B([2. Click Set up Smarter Testing\nwizard opens])
+    B --> C{3. VCS check}
+    C -->|3a: No app installed| D[Install CircleCI\nGitHub App]
+    C -->|3b: Already installed ★| E[Skip — wizard\nopens at Step 2]
+    D --> F
+    E --> F
+    F{4. Select test job} -->|4a: Configure all jobs| G[All jobs included\nin setup prompt]
+    F -->|4b: Suggested job ★| H[User confirms\nor searches]
+    G --> J
+    H --> I([5. Select Local\ninstallation path])
+    I --> J([6. Copy setup prompt\nto clipboard])
+    J --> K([7. Open repository\nin terminal])
+    K --> L([8. Paste prompt into\nAI assistant])
+    L --> M([9. AI creates test-suites.yml\n+ config.yml · run doctor])
+    M --> N{10. Doctor results}
+    N -->|10a: All checks pass ★| O([Push branch\nopen PR])
+    N -->|10b: Errors found| L
+    O --> P([11. Merge PR\ninto main])
+    P --> Q([12. TIA active\nTest Insights populating ✓])
+```
+
+> ★ marks the ideal path at each decision point.
+
+---
+
 ## Background
 
 Users arrive at the onboarding wizard after clicking "Set up Smarter Testing" in the Smarter Testing panel on the Pipelines page or Org Home. The wizard receives the project context (repo name, eligible features, pipeline job list) at open time.

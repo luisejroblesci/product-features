@@ -2,7 +2,8 @@
 
 **Experiment:** `smarter-testing/onboarding`  
 **Status:** Draft — for eng/PM/design discussion  
-**Prototype:** [mockup.html](./mockup.html)
+**Prototype:** [mockup.html](./mockup.html)  
+**Local flow diagram:** [local-flow.html](./local-flow.html)
 
 ---
 
