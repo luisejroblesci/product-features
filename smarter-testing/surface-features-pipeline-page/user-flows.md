@@ -199,48 +199,16 @@ Eligibility is evaluated at the **project/repo level** and cached — not recalc
 
 ---
 
-## CTA: Claude Code Deeplink {#open-questions}
+## CTA: Set up Smarter Testing
 
-### Proposed approach
+Each "Set up Smarter Testing" button in the slide-out panel opens the Smarter Testing onboarding wizard. See [`../onboarding/readme.md`](../onboarding/readme.md) for the full wizard spec.
 
-Each "Set up with Claude Code" button constructs a deeplink:
+The wizard guides users through:
+1. GitHub App installation (or skip if already installed)
+2. Test job selection (pre-filled with a recommended job)
+3. Installation path — Local (AI assistant prompt) or UI (CircleCI auto-creates PR)
 
-```
-claude://open?prompt=<url-encoded-prompt>
-```
-
-The prompt is pre-populated with:
-- The specific feature to set up
-- The user's project context (repo name, detected language, existing config snippets)
-- Instructions to follow the Smarter Testing setup guide
-
-**Example prompt (Test Impact Analysis, Jest project):**
-```
-I want to set up Test Impact Analysis for my CircleCI project "my-org/my-repo".
-It's a JavaScript project using Jest. Please follow the steps at 
-https://circleci.com/docs/guides/test/set-up-test-impact-analysis/ 
-and help me configure .circleci/test-suites.yml with test-impact-analysis: true.
-```
-
-### Happy path (Claude Code installed)
-1. User clicks "Set up with Claude Code"
-2. Browser opens `claude://` URI → Claude Code launches (or surfaces from tray)
-3. Claude Code opens with the pre-populated prompt
-4. User follows the guided setup in their terminal
-
-### Fallback (Claude Code not installed)
-1. Browser attempts `claude://` URI → nothing happens / OS shows error
-2. After 2–3 seconds with no response, the CTA falls back:
-   - Show an install prompt: "Claude Code not detected. [Install Claude Code] or [Open docs instead]"
-   - "Install Claude Code" → `https://claude.ai/code` (or CLI install page)
-   - "Open docs instead" → feature-specific docs page
-
-### Open questions for eng
-1. Does a `claude://` URI scheme exist? If not, does it need to be registered as part of the Claude Code CLI installer?
-2. Is there a web-based alternative (claude.ai/code or similar) that doesn't require local install?
-3. How is fallback detection handled cross-browser? (The 2–3s timeout heuristic is imprecise)
-4. Should the prompt include project context (repo, language, existing YAML snippets)? If yes, what data is available in the Pipelines page at time of click?
-5. Should there be analytics on CTA clicks to measure conversion? (Amplitude event: `smarter_testing_cta_clicked`, properties: feature, source: pipelines_page)
+**Open question:** Does the wizard open as an inline modal on the Pipelines page, or as a separate route? Confirm with eng. See wizard open questions in `../onboarding/readme.md`.
 
 ---
 

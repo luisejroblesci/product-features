@@ -87,7 +87,7 @@ Compare current run against the rolling 30-day average prior to feature activati
 | SAVINGS column as the primary data surface | Added a dedicated `SAVINGS (Beta)` column to the Pipelines table, visible alongside `PIPELINE RUNS`, `TRIGGER`, `START/FINISH`, and `ACTIONS`. Keeps the savings signal always visible without requiring a click. |
 | Slide-out panel (not inline expansion) | Avoids layout disruption on the table; consistent with other CCI side panels; allows richer card content per feature. |
 | Single "View docs" CTA → Getting Started guide | All "View docs" links go to `https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/` rather than individual feature pages. Reduces friction for new users who need orientation before jumping into per-feature setup. |
-| "Set up with Claude Code" CTA → `claude://` deeplink | Hypothesis: a pre-populated Claude Code prompt lowers setup friction for users who already have the CLI. Open question: does the URI scheme exist? What is the fallback if not installed? |
+| "Set up Smarter Testing" CTA → onboarding wizard | Replaces the `claude://` deeplink, which required local CLI installation with an undefined fallback. The wizard guides users through GH App install, job selection, and a choice between Local (AI assistant prompt) and UI (CircleCI auto-creates PR) setup paths. See [`../onboarding/readme.md`](../onboarding/readme.md). |
 | Eligibility is project-level, not per-run | Badges appear on every run for the same project. No per-run eligibility recalculation. |
 | Dismissal UX required | Users who open the slide-out panel and decide they're not interested need a way to dismiss a feature recommendation. Once dismissed, that feature should not reappear as a suggestion for that project. (2026-07-31 planning session) |
 | E2E projects disqualified from TIA | Cypress/Playwright projects that test against a running app rely on separate services and are incompatible with single-process coverage — TIA should not be recommended for them. (2026-07-31 planning session) |
@@ -119,7 +119,7 @@ Compare current run against the rolling 30-day average prior to feature activati
 
 ## Open Questions
 
-1. **`claude://` URI scheme** — Does it exist? Needs to be registered by the Claude Code CLI installer. Alternative: web-based fallback (`claude.ai/code`). Confirm with `#project-code-factory`.
+1. **Onboarding wizard entry point** — Does the wizard open as an inline modal on the Pipelines page (preferred for context continuity) or as a separate route? Confirm with eng before production implementation. See [`../onboarding/readme.md`](../onboarding/readme.md) for the wizard's own open questions.
 2. **Eligibility data availability** — Which project-level signals (framework, parallelism, JUnit, flaky history) are queryable from the Pipelines page backend?
 3. **Baseline for savings actuals** — Is the pre-activation 30-day average run duration accessible in the product backend?
 4. **Badge deduplication** — If the same project has 10 runs in view, the badge appears 10 times. Discuss: show only on the most recent run for each project?
@@ -142,6 +142,8 @@ Compare current run against the rolling 30-day average prior to feature activati
 
 - [Prototype (interactive mockup)](https://claude.ai/code/artifact/198f6dab-0804-4c39-ae98-775ca200b774)
 - [User flows](./user-flows.md)
+- [Onboarding wizard spec](../onboarding/readme.md)
+- [Onboarding wizard prototype](../onboarding/mockup.html)
 - [Getting started with Smarter Testing](https://circleci.com/docs/guides/test/getting-started-with-smarter-testing/)
 - [Amplitude dashboard](https://app.amplitude.com/analytics/circleci/dashboard/fz92hq7s)
 - [Ideas/notes doc](https://docs.google.com/document/d/1ozecsP6-9RcR6cIoCK0D1R2CKnKCUt8cwGzr2GH9BI4/edit?tab=t.m2hbu0vq0o3j)
